@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">My Budget</string>
+    <string name="import_csv">Import .CSV file</string>
+    <string name="export_csv">Export .CSV file</string>
+    <string name="manage_categories">Manage Categories</string>
+    <string name="prompt_cat_name">Category Name</string>
+    <string name="is_reconciled">Reconciled?</string>
+    <string name="trans_date">Transaction Date</string>
+    <string name="trans_desc">Description</string>
+    <string name="trans_est">Establishment</string>
+    <string name="trans_acc">Account</string>
+    <string name="trans_amount">Amount</string>
+    <string name="trans_cat">Category</string>
+    <string name="trans_subcat">Sub-category</string>
+    <string name="flag_income">For Income Tax?</string>
+    <string name="flag_recurring">Recurring?</string>
+    <string name="action_save_trans">Save transaction</string>
+    <string name="action_delete_trans">Delete transaction</string>
+    <string name="toast_updated">Transaction updated</string>
+    <string name="toast_update_failed">Error updating transaction</string>
+    <string name="toast_saved">Transaction saved</string>
+    <string name="toast_save_failed">Error saving transaction</string>
+    <string name="toast_cat_saved">Category saved</string>
+    <string name="toast_cat_save_failed">Error saving category</string>
+    <string name="toast_cat_updated">Category updated</string>
+    <string name="toast_cat_update_failed">Error updating category</string>
+    <string name="toast_cat_deleted">Category deleted</string>
+    <string name="toast_cat_delete_failed">Error deleting category</string>
+    <string name="toast_trans_deleted">Transaction deleted</string>
+    <string name="toast_trans_delete_failed">Error deleting transaction</string>
+    <string name="delete_cat_dialog_msg">Delete this category? (This may affect your transactions)</string>
+    <string name="delete_trans_dialog_msg">Delete this transaction?</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+</resources>
