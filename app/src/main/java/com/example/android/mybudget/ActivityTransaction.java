@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.CursorAdapter;
 import android.widget.DatePicker;
@@ -27,6 +26,7 @@ import android.widget.Toast;
 
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
+import com.example.android.mybudget.data.BudgetContract.AccEntry;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -37,6 +37,7 @@ import java.util.Date;
 public class ActivityTransaction extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final int BUD_LOADER = 0;
     private static final int CAT_LOADER = 1;
+    private static final int ACC_LOADER = 2;
     private Uri mCurrentTransUri;
 
     private SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
@@ -48,19 +49,15 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     private TextView mDateET;
     private EditText mDescET;
     private EditText mEstET;
-    private EditText mAccET;
+    private Spinner mAccSpinner;
     private EditText mAmountET;
     private Spinner mCatSpinner;
     private CheckBox mIncTaxET;
     private CheckBox mRecurrET;
 
-    private CursorAdapter adapter;
-    private int selectedCategory;
+    private CursorAdapter catAdapter;
+    private CursorAdapter accAdapter;
 
-    private boolean isCatLoaderfinished;
-    private boolean isBudLoaderfinished;
-
-    private Calendar calendar;
     private int year, month, day;
 
     @Override
@@ -73,7 +70,6 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
         if (mCurrentTransUri != null) {
             setTitle("Edit transaction");
-            getLoaderManager().initLoader(BUD_LOADER, null, this);
         } else {
             setTitle("Add a transaction");
         }
@@ -84,34 +80,21 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         mDateET = (TextView) findViewById(R.id.tv_trans_date);
         mDescET = (EditText) findViewById(R.id.edit_trans_desc);
         mEstET = (EditText) findViewById(R.id.edit_trans_est);
-        mAccET = (EditText) findViewById(R.id.edit_trans_acc);
+        mAccSpinner = (Spinner) findViewById(R.id.sp_trans_acc);
         mAmountET = (EditText) findViewById(R.id.edit_trans_amount);
         mCatSpinner = (Spinner) findViewById(R.id.sp_trans_cat);
         mIncTaxET = (CheckBox) findViewById(R.id.edit_flag_income);
         mRecurrET = (CheckBox) findViewById(R.id.edit_flag_recurring);
 
-        calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance();
         year = calendar.get(Calendar.YEAR);
         month = calendar.get(Calendar.MONTH);
         day = calendar.get(Calendar.DAY_OF_MONTH);
         showDate(year, month + 1, day);
 
-        adapter = new SpCatCursorAdapter(this, null);
-        mCatSpinner.setAdapter(adapter);
+        catAdapter = new SpCatCursorAdapter(this, null);
+        accAdapter = new SpAccCursorAdapter(this, null);
 
-/*
-        mCatSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                selectedCategory = (int) (long) l;
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView) {
-                selectedCategory = 0;
-            }
-        });
-*/
     }
 
     @Override
@@ -137,6 +120,12 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                         CatEntry.COLUMN_CATNAME};
                 String sortBy = CatEntry.COLUMN_CATNAME + " ASC";
                 return new CursorLoader(this, CatEntry.CONTENT_URI, projection2, null, null, sortBy);
+            case ACC_LOADER:
+                String[] projection3 = {
+                        AccEntry._ID,
+                        AccEntry.COLUMN_ACCNAME};
+                String sortBy3 = AccEntry._ID + " ASC";
+                return new CursorLoader(this, AccEntry.CONTENT_URI, projection3, null, null, sortBy3);
             default:
                 return null;
         }
@@ -212,8 +201,8 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                     mDateET.setText(df.format(date));
                     mDescET.setText(data.getString(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DESC)));
                     mEstET.setText(data.getString(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_EST)));
-                    mAccET.setText(Integer.toString(data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_ACCOUNT))));
-                    selectedCategory = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_CAT));
+                    int selectedAccount = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_ACCOUNT));
+                    int selectedCategory = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_CAT));
 
                     int incTaxFlag = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_TAXFLAG));
                     if (incTaxFlag == 0) {
@@ -228,18 +217,22 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                         mRecurrET.setChecked(true);
                     }
                     mAmountET.setText(dcFormat.format(data.getFloat(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT))));
-                    if (isCatLoaderfinished){
-                        getCategoryPosition(selectedCategory);
-                    }
-                    isBudLoaderfinished = true;
+                    mCatSpinner.setAdapter(catAdapter);
+                    mAccSpinner.setAdapter(accAdapter);
+
+                    getCategoryPosition(selectedCategory);
+                    getAccountPosition(selectedAccount);
                 }
                 break;
             case CAT_LOADER:
-                adapter.swapCursor(data);
-                if (isBudLoaderfinished){
-                    getCategoryPosition(selectedCategory);
+                catAdapter.swapCursor(data);
+                getLoaderManager().initLoader(ACC_LOADER, null, this);
+                break;
+            case ACC_LOADER:
+                accAdapter.swapCursor(data);
+                if (mCurrentTransUri != null) {
+                    getLoaderManager().initLoader(BUD_LOADER, null, this);
                 }
-                isCatLoaderfinished = true;
                 break;
         }
     }
@@ -253,7 +246,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                 mDateET.setText(null);
                 mDescET.setText(null);
                 mEstET.setText(null);
-                mAccET.setText(null);
+                mAccSpinner.setSelection(0);
                 mCatSpinner.setSelection(0);
                 mIncTaxET.setChecked(false);
                 mRecurrET.setChecked(false);
@@ -261,7 +254,11 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                 break;
             case CAT_LOADER:
                 loader.reset();
-                adapter.swapCursor(null);
+                catAdapter.swapCursor(null);
+                break;
+            case ACC_LOADER:
+                loader.reset();
+                accAdapter.swapCursor(null);
                 break;
         }
     }
@@ -281,7 +278,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
         String descTrans = mDescET.getText().toString().trim();
         String estTrans = mEstET.getText().toString().trim();
-        int accTrans = Integer.parseInt(mAccET.getText().toString().trim());
+        int accTrans = (int) mAccSpinner.getSelectedItemId();
         int catTrans = (int) mCatSpinner.getSelectedItemId();
 
         int taxFlag = 0;
@@ -388,9 +385,16 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     }
 
     private void getCategoryPosition(int catID) {
-        for (int position = 0; position < adapter.getCount(); position++) {
-            if (adapter.getItemId(position) == catID) {
+        for (int position = 0; position < catAdapter.getCount(); position++) {
+            if (catAdapter.getItemId(position) == catID) {
                 mCatSpinner.setSelection(position);
+            }
+        }
+    }
+    private void getAccountPosition(int accID) {
+        for (int position = 0; position < accAdapter.getCount(); position++) {
+            if (accAdapter.getItemId(position) == accID) {
+                mAccSpinner.setSelection(position);
             }
         }
     }

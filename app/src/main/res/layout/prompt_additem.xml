@@ -7,14 +7,14 @@
     android:padding="24dp" >
 
     <TextView
-        android:id="@+id/prompt_cat_name"
+        android:id="@+id/prompt_name_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/prompt_cat_name"
+        android:text="Name"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
     <EditText
-        android:id="@+id/cat_name"
+        android:id="@+id/item_name"
         android:hint="Name"
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"

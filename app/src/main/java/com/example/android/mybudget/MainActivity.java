@@ -102,6 +102,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 Intent intent = new Intent(this, ActivityCategory.class);
                 startActivity(intent);
                 return true;
+            case R.id.action_mngacc:
+                Intent intent2 = new Intent(this, ActivityAccounts.class);
+                startActivity(intent2);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -163,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             description = RowData[2];
             establishment = RowData[3];
 
-            if (RowData[4] == "NAB cheque") {
+            if (RowData[4].equals("NAB cheque")) {
                 accountID = 0;
             } else {
                 accountID = 1;
@@ -183,9 +187,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             values.put(TransEntry.COLUMN_TRANS_DATEUPD, todayMilli);
 
             Uri newUri = getContentResolver().insert(TransEntry.CONTENT_URI, values);
-            if (newUri != null) {
-                // Toast.makeText(this, "Transaction saved", Toast.LENGTH_SHORT).show();
-            } else {
+            if (newUri == null) {
                 Toast.makeText(this, "Error saving transaction", Toast.LENGTH_SHORT).show();
             }
         }
@@ -249,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public void exportToCSV() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state)) {
-            Toast.makeText(this, "External StorageState = true", Toast.LENGTH_SHORT).show();;
+            Toast.makeText(this, "External StorageState = true", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "External StorageState = false", Toast.LENGTH_SHORT).show();
         }

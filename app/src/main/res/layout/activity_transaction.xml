@@ -93,23 +93,24 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp">
         <TextView
             android:layout_height="wrap_content"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:textColor="@color/primaryText"
             android:textAppearance="?android:textAppearanceSmall"
+            android:layout_gravity="center_vertical"
             android:text="@string/trans_acc" />
-        <EditText
-            android:layout_height="wrap_content"
+        <Spinner
+            android:id="@+id/sp_trans_acc"
+            android:layout_gravity="center_vertical"
             android:layout_width="0dp"
-            android:layout_weight="2"
-            android:textColor="@color/secondaryText"
-            android:textAppearance="?android:textAppearanceSmall"
-            android:id="@+id/edit_trans_acc"
-            android:hint="0"
-            android:inputType="number" />
+            android:layout_height="wrap_content"
+            android:layout_weight="2">
+        </Spinner>
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"

@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
+import com.example.android.mybudget.data.BudgetContract.AccEntry;
 
 
 /**
@@ -14,8 +15,8 @@ import com.example.android.mybudget.data.BudgetContract.CatEntry;
  */
 
 public class BudgetDBHelper extends SQLiteOpenHelper {
-    public static final int DATABASE_VERSION = 1;
-    public static final String DATABASE_NAME = "mybudget.db";
+    private static final int DATABASE_VERSION = 2;
+    private static final String DATABASE_NAME = "mybudget.db";
 
     public BudgetDBHelper(Context context){
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -49,8 +50,14 @@ public class BudgetDBHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        Log.i("this", "Entered onUpgrade method");
-
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < 2){
+            String SQL_CREATE_ENTRIES_ACC =
+                    "CREATE TABLE " + AccEntry.TABLE_NAME + " (" +
+                    AccEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    AccEntry.COLUMN_ACCNAME + " TEXT NOT NULL)";
+            Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_ACC);
+            db.execSQL(SQL_CREATE_ENTRIES_ACC);
+        }
     }
 }

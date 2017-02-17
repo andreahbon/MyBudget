@@ -10,7 +10,7 @@ import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.example.android.mybudget.data.BudgetContract;
+import com.example.android.mybudget.data.BudgetContract.AccEntry;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
 
@@ -27,7 +27,8 @@ public class BudgetProvider extends ContentProvider {
     private static final int TRANS_ID = 101;
     private static final int CATS = 200;
     private static final int CAT_ID = 201;
-    private static final int TRANS_CAT_JOIN = 300;
+    private static final int ACCOUNTS = 300;
+    private static final int ACC_ID = 301;
 
     private BudgetDBHelper mDbHelper;
 
@@ -44,12 +45,6 @@ public class BudgetProvider extends ContentProvider {
 
         int match = sUriMatcher.match(uri);
         switch (match){
-            case TRANS_CAT_JOIN:
-                cursor = database.rawQuery("SELECT * FROM " + TransEntry.TABLE_NAME +
-                        " LEFT OUTER JOIN " + CatEntry.TABLE_NAME + " ON " +
-                        TransEntry.COLUMN_TRANS_CAT + "=" + CatEntry.FULL_ID +
-                        " ORDER BY " + TransEntry.COLUMN_TRANS_DATE + " ASC", null);
-                break;
             case TRANSACTIONS:
                 cursor = database.query(TransEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
@@ -66,6 +61,14 @@ public class BudgetProvider extends ContentProvider {
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
                 cursor = database.query(CatEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
+            case ACCOUNTS:
+                cursor = database.query(AccEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
+            case ACC_ID:
+                selection = AccEntry._ID + "=?";
+                selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
+                cursor = database.query(AccEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
             default:
                 throw new IllegalArgumentException("Cannot query unknown URI " + uri);
         }
@@ -75,11 +78,12 @@ public class BudgetProvider extends ContentProvider {
 
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
     static {
-//        sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_TRANS_JOIN_CAT, TRANS_CAT_JOIN);
         sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_TRANS, TRANSACTIONS);
         sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_TRANS + "/#", TRANS_ID);
         sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_CATEGORIES, CATS);
         sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_CATEGORIES + "/#", CAT_ID);
+        sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_ACCOUNTS, ACCOUNTS);
+        sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_ACCOUNTS + "/#", ACC_ID);
     }
 
     @Override
@@ -94,6 +98,10 @@ public class BudgetProvider extends ContentProvider {
                 return CatEntry.CONTENT_LIST_TYPE;
             case CAT_ID:
                 return CatEntry.CONTENT_ITEM_TYPE;
+            case ACCOUNTS:
+                return AccEntry.CONTENT_LIST_TYPE;
+            case ACC_ID:
+                return AccEntry.CONTENT_ITEM_TYPE;
             default:
                 throw new   IllegalStateException("Unknown URI " + uri + " with match " + match);
         }
@@ -108,6 +116,8 @@ public class BudgetProvider extends ContentProvider {
                 return insertTransaction(uri, values);
             case CATS:
                 return insertCategory(uri, values);
+            case ACCOUNTS:
+                return insertAccount(uri, values);
             default:
                 throw new IllegalArgumentException("Insertion is not supported for " + uri);
         }
@@ -135,6 +145,18 @@ public class BudgetProvider extends ContentProvider {
         return ContentUris.withAppendedId(uri, mNewID);
     }
 
+    public Uri insertAccount(Uri uri, ContentValues values){
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        long mNewID = db.insert(AccEntry.TABLE_NAME, null, values);
+        if (mNewID == -1){
+            Log.e(LOG_TAG, "Failed to insert row for " + uri);
+            return null;
+        }
+        getContext().getContentResolver().notifyChange(uri, null);
+        return ContentUris.withAppendedId(uri, mNewID);
+    }
+
+
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
@@ -157,6 +179,14 @@ public class BudgetProvider extends ContentProvider {
                 selection = CatEntry._ID + "=?";
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
                 rowsDeleted = db.delete(CatEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case ACCOUNTS:
+                rowsDeleted = db.delete(AccEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case ACC_ID:
+                selection = AccEntry._ID + "=?";
+                selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
+                rowsDeleted = db.delete(AccEntry.TABLE_NAME, selection, selectionArgs);
                 break;
             default:
                 throw new IllegalArgumentException("Deletion is not supported for " + uri);
@@ -186,6 +216,12 @@ public class BudgetProvider extends ContentProvider {
                 selection = CatEntry._ID + "=?";
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
                 return updateCategory(uri, values, selection, selectionArgs);
+            case ACCOUNTS:
+                return updateAccount(uri, values, selection, selectionArgs);
+            case ACC_ID:
+                selection = AccEntry._ID + "=?";
+                selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
+                return updateAccount(uri, values, selection, selectionArgs);
             default:
                 throw new IllegalArgumentException("Update is not supported for " + uri);
         }
@@ -203,6 +239,14 @@ public class BudgetProvider extends ContentProvider {
     public int updateCategory(Uri uri, ContentValues values, String selection, String[] selectionArgs){
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
         int rowsUpdated = db.update(CatEntry.TABLE_NAME, values, selection, selectionArgs);
+        if(rowsUpdated > 0){
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return rowsUpdated;
+    }
+    public int updateAccount(Uri uri, ContentValues values, String selection, String[] selectionArgs){
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        int rowsUpdated = db.update(AccEntry.TABLE_NAME, values, selection, selectionArgs);
         if(rowsUpdated > 0){
             getContext().getContentResolver().notifyChange(uri, null);
         }

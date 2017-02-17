@@ -68,11 +68,7 @@ public class TransCursorAdapter extends CursorAdapter {
         int reconciledFlag = cursor.getInt(cursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECONCILEDFLAG));
         int thisCatID = cursor.getInt(cursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_CAT));
         String category = "";
-
-        for (int j = 0; j < catIDs.size(); j++){
-            Log.i("CursorAdapter","catNames.get("+j+") = "+ catNames.get(j));
-        }
-
+        
         for (int j = 0; j < catIDs.size(); j++){
             if (thisCatID == catIDs.get(j)){
                 category = catNames.get(j);

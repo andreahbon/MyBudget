@@ -15,4 +15,8 @@
         android:id="@+id/action_mngcat"
         android:title="@string/manage_categories"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_mngacc"
+        android:title="@string/manage_accounts"
+        app:showAsAction="never" />
 </menu>

@@ -19,9 +19,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.mybudget.data.BudgetContract;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
 
 public class ActivityCategory extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
@@ -62,10 +62,12 @@ public class ActivityCategory extends AppCompatActivity implements LoaderManager
 
     private void displayCatPopup(final Uri catUri, String currCatName){
         LayoutInflater li = LayoutInflater.from(context);
-        View promptView = li.inflate(R.layout.prompt_addcat, null);
+        View promptView = li.inflate(R.layout.prompt_additem, null);
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
         alertDialogBuilder.setView(promptView);
-        final EditText catNameET = (EditText) promptView.findViewById(R.id.cat_name);
+        TextView labelTV = (TextView) promptView.findViewById(R.id.prompt_name_label);
+        labelTV.setText(getString(R.string.prompt_cat_name));
+        final EditText catNameET = (EditText) promptView.findViewById(R.id.item_name);
 
         if(currCatName != null){
             catNameET.setText(currCatName);
