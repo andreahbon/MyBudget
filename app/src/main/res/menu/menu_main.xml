@@ -19,4 +19,8 @@
         android:id="@+id/action_mngacc"
         android:title="@string/manage_accounts"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_filter"
+        android:title="Filter"
+        app:showAsAction="never" />
 </menu>

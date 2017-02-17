@@ -8,17 +8,20 @@ import android.util.Log;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
 import com.example.android.mybudget.data.BudgetContract.AccEntry;
+import com.example.android.mybudget.data.BudgetContract.FilterAccEntry;
+import com.example.android.mybudget.data.BudgetContract.FilterCatEntry;
+
 
 
 /**
  * Created by andre on 6/02/2017.
  */
 
-public class BudgetDBHelper extends SQLiteOpenHelper {
-    private static final int DATABASE_VERSION = 2;
+class BudgetDBHelper extends SQLiteOpenHelper {
+    private static final int DATABASE_VERSION = 3;
     private static final String DATABASE_NAME = "mybudget.db";
 
-    public BudgetDBHelper(Context context){
+    BudgetDBHelper(Context context){
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
@@ -58,6 +61,20 @@ public class BudgetDBHelper extends SQLiteOpenHelper {
                     AccEntry.COLUMN_ACCNAME + " TEXT NOT NULL)";
             Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_ACC);
             db.execSQL(SQL_CREATE_ENTRIES_ACC);
+        }
+        if(oldVersion < 3){
+            String SQL_CREATE_ENTRIES_FILTER_ACC =
+                    "CREATE TABLE " + FilterAccEntry.TABLE_NAME + " (" +
+                            FilterAccEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                            FilterAccEntry.COLUMN_ACC_ID + " INTEGER NOT NULL)";
+            Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_FILTER_ACC);
+            db.execSQL(SQL_CREATE_ENTRIES_FILTER_ACC);
+            String SQL_CREATE_ENTRIES_FILTER_CAT =
+                    "CREATE TABLE " + FilterCatEntry.TABLE_NAME + " (" +
+                            FilterCatEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                            FilterCatEntry.COLUMN_CAT_ID+ " INTEGER NOT NULL)";
+            Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_FILTER_CAT);
+            db.execSQL(SQL_CREATE_ENTRIES_FILTER_CAT);
         }
     }
 }

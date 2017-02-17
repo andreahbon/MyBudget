@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.example.android.mybudget">
+
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
@@ -34,11 +35,16 @@
             android:name=".ActivityAccounts"
             android:label="Accounts"
             android:parentActivityName=".MainActivity"/>
+        <activity
+            android:name=".ActivityFilter"
+            android:label="Filter"
+            android:parentActivityName=".MainActivity"/>
 
         <provider
             android:name=".data.BudgetProvider"
             android:authorities="com.example.android.mybudget"
             android:exported="false"/>
+
 
     </application>
 

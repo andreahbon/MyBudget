@@ -7,7 +7,6 @@ import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
@@ -22,10 +21,10 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.example.android.mybudget.data.BudgetContract;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
-import com.example.android.mybudget.data.BudgetDBHelper;
+import com.example.android.mybudget.data.BudgetContract.FilterAccEntry;
+import com.example.android.mybudget.data.BudgetContract.FilterCatEntry;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -40,17 +39,18 @@ import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     public int REQUEST_FILE_GET = 1;
+    public int CHANGE_FILTER = 2;
     private static final int BUDGET_LOADER = 0;
     private static final int CAT_LOADER = 1;
+    private static final int FILTER_ACC_LOADER = 2;
+    private static final int FILTER_CAT_LOADER = 3;
     private TransCursorAdapter budAdapter;
 
     private ArrayList<Integer> catIDs = new ArrayList<>();
     private ArrayList<String> catNames = new ArrayList<>();
 
-    private BudgetDBHelper mDbHelper;
-
-    public static final int MY_PERMISSIONS_REQUEST_WRTTE = 1;
-
+    private String filterAccSelection = "";
+    private String filterCatSelection = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         budAdapter = new TransCursorAdapter(this, null, catIDs, catNames);
         transListView.setAdapter(budAdapter);
 
-        getLoaderManager().initLoader(CAT_LOADER, null, this);
+        getLoaderManager().initLoader(FILTER_ACC_LOADER, null, this);
 
         transListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -106,6 +106,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 Intent intent2 = new Intent(this, ActivityAccounts.class);
                 startActivity(intent2);
                 return true;
+            case R.id.action_filter:
+                Intent intent3 = new Intent(this, ActivityFilter.class);
+                startActivityForResult(intent3, CHANGE_FILTER);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -138,6 +142,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 e.printStackTrace();
             }
         }
+        if (requestCode == CHANGE_FILTER && resultCode == RESULT_OK) {
+            Intent refresh = new Intent(this, MainActivity.class);
+            startActivity(refresh);
+            this.finish();
+        }
+
     }
 
     public void saveCSVToDatabase(BufferedReader buffer) throws IOException, ParseException {
@@ -195,9 +205,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        switch(i){
+        switch (i) {
+            case FILTER_ACC_LOADER:
+                String[] projection3 = {
+                        FilterAccEntry._ID,
+                        FilterAccEntry.COLUMN_ACC_ID};
+                String sortBy3 = FilterAccEntry.COLUMN_ACC_ID + " ASC";
+                return new CursorLoader(this, FilterAccEntry.CONTENT_URI, projection3, null, null, sortBy3);
+            case FILTER_CAT_LOADER:
+                String[] projection4 = {
+                        FilterCatEntry._ID,
+                        FilterCatEntry.COLUMN_CAT_ID};
+                String sortBy4 = FilterCatEntry.COLUMN_CAT_ID + " ASC";
+                return new CursorLoader(this, FilterCatEntry.CONTENT_URI, projection4, null, null, sortBy4);
             case BUDGET_LOADER:
-              String[] projection = {
+                String[] projection = {
                         TransEntry._ID,
                         TransEntry.COLUMN_TRANS_RECONCILEDFLAG,
                         TransEntry.COLUMN_TRANS_CAT, // changed from DESC
@@ -205,8 +227,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         TransEntry.COLUMN_TRANS_DATE,
                         TransEntry.COLUMN_TRANS_AMOUNT};
                 String sortBy = TransEntry.COLUMN_TRANS_DATE + " ASC";
-                return new CursorLoader(this, TransEntry.CONTENT_URI, projection, null, null, sortBy);
-        case CAT_LOADER:
+                String selectionSt = "";
+
+                if (!filterAccSelection.isEmpty()){
+                    selectionSt = filterAccSelection;
+                    if(!filterCatSelection.isEmpty()) {
+                        selectionSt += " AND " + filterCatSelection;
+                    }
+                } else {
+                    if(!filterCatSelection.isEmpty()){
+                        selectionSt = filterCatSelection;
+                    }
+                }
+
+                return new CursorLoader(this, TransEntry.CONTENT_URI, projection, selectionSt, null, sortBy);
+            case CAT_LOADER:
                 String[] projection2 = {
                         CatEntry._ID,
                         CatEntry.COLUMN_CATNAME};
@@ -219,10 +254,36 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        switch (loader.getId()){
+        switch (loader.getId()) {
+            case FILTER_ACC_LOADER:
+                filterAccSelection = "";
+                while (cursor.moveToNext()) {
+                    if (filterAccSelection.equals("")) {
+                        filterAccSelection = "(" + TransEntry.COLUMN_TRANS_ACCOUNT + "=" + cursor.getInt(cursor.getColumnIndexOrThrow(FilterAccEntry.COLUMN_ACC_ID));
+                    } else {
+                        filterAccSelection = filterAccSelection + " OR " + TransEntry.COLUMN_TRANS_ACCOUNT + "=" + cursor.getInt(cursor.getColumnIndexOrThrow(FilterAccEntry.COLUMN_ACC_ID));
+                    }
+                }
+                if (!filterAccSelection.equals("")) {
+                    filterAccSelection += ")";
+                }
+                getLoaderManager().initLoader(FILTER_CAT_LOADER, null, this);
+                break;
+            case FILTER_CAT_LOADER:
+                filterCatSelection = "";
+                while (cursor.moveToNext()) {
+                    if(filterCatSelection.equals("")){
+                        filterCatSelection = "(" + TransEntry.COLUMN_TRANS_CAT + "=" + cursor.getInt(cursor.getColumnIndexOrThrow(FilterCatEntry.COLUMN_CAT_ID));
+                    } else {
+                        filterCatSelection = filterCatSelection + " OR " + TransEntry.COLUMN_TRANS_CAT + "=" + cursor.getInt(cursor.getColumnIndexOrThrow(FilterCatEntry.COLUMN_CAT_ID));
+                    }
+                }
+                if(!filterCatSelection.equals("")){
+                    filterCatSelection += ")";
+                }
+                getLoaderManager().initLoader(CAT_LOADER, null, this);
             case CAT_LOADER:
-                //cursor.moveToFirst();
-                while (cursor.moveToNext()){
+                while (cursor.moveToNext()) {
                     catIDs.add(cursor.getInt(cursor.getColumnIndexOrThrow(CatEntry._ID)));
                     catNames.add(cursor.getString(cursor.getColumnIndexOrThrow(CatEntry.COLUMN_CATNAME)));
                 }
@@ -236,7 +297,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        switch (loader.getId()){
+        switch (loader.getId()) {
+            case FILTER_ACC_LOADER:
+                break;
             case BUDGET_LOADER:
                 budAdapter.swapCursor(null);
                 break;

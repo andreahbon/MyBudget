@@ -14,6 +14,8 @@ public class BudgetContract {
     static final String PATH_TRANS = "transactions";
     static final String PATH_CATEGORIES = "categories";
     static final String PATH_ACCOUNTS = "accounts";
+    static final String PATH_FILTER_CATS = "filtercats";
+    static final String PATH_FILTER_ACCOUNTS = "filteraccounts";
 
     public static abstract class TransEntry implements BaseColumns {
         public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, PATH_TRANS);
@@ -68,4 +70,29 @@ public class BudgetContract {
                 + CONTENT_AUTHORITY + "/" + PATH_ACCOUNTS;
     }
 
+    public static abstract class FilterCatEntry implements BaseColumns{
+        public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, PATH_FILTER_CATS);
+        static final String TABLE_NAME = "filtercats";
+
+        public static final String _ID = BaseColumns._ID;
+        public static final String COLUMN_CAT_ID = "catID";
+
+        static final String CONTENT_LIST_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
+                + CONTENT_AUTHORITY + "/" + PATH_FILTER_CATS;
+        static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/"
+                + CONTENT_AUTHORITY + "/" + PATH_FILTER_CATS;
+    }
+
+    public static abstract class FilterAccEntry implements BaseColumns{
+        public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, PATH_FILTER_ACCOUNTS);
+        static final String TABLE_NAME = "filteraccounts";
+
+        public static final String _ID = BaseColumns._ID;
+        public static final String COLUMN_ACC_ID = "accID";
+
+        static final String CONTENT_LIST_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
+                + CONTENT_AUTHORITY + "/" + PATH_FILTER_ACCOUNTS;
+        static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/"
+                + CONTENT_AUTHORITY + "/" + PATH_FILTER_ACCOUNTS;
+    }
 }
