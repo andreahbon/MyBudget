@@ -94,7 +94,6 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
         catAdapter = new SpCatCursorAdapter(this, null);
         accAdapter = new SpAccCursorAdapter(this, null);
-
     }
 
     @Override
@@ -196,7 +195,6 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                     year = Integer.parseInt(dfYear.format(date));
                     month = Integer.parseInt(dfMonth.format(date)) - 1;
                     day = Integer.parseInt(dfDay.format(date));
-                    ;
 
                     mDateET.setText(df.format(date));
                     mDescET.setText(data.getString(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DESC)));
@@ -217,19 +215,21 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                         mRecurrET.setChecked(true);
                     }
                     mAmountET.setText(dcFormat.format(data.getFloat(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT))));
-                    mCatSpinner.setAdapter(catAdapter);
-                    mAccSpinner.setAdapter(accAdapter);
 
                     getCategoryPosition(selectedCategory);
                     getAccountPosition(selectedAccount);
                 }
                 break;
             case CAT_LOADER:
+                mCatSpinner.setAdapter(catAdapter);
                 catAdapter.swapCursor(data);
+                mCatSpinner.setSelection(0);
                 getLoaderManager().initLoader(ACC_LOADER, null, this);
                 break;
             case ACC_LOADER:
+                mAccSpinner.setAdapter(accAdapter);
                 accAdapter.swapCursor(data);
+                mAccSpinner.setSelection(0);
                 if (mCurrentTransUri != null) {
                     getLoaderManager().initLoader(BUD_LOADER, null, this);
                 }

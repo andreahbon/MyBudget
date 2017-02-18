@@ -31,7 +31,7 @@ public class BudgetContract {
         public static final String COLUMN_TRANS_ACCOUNT = "account";
         public static final String COLUMN_TRANS_AMOUNT = "amount";
         public static final String COLUMN_TRANS_CAT = "category";
-        static final String COLUMN_TRANS_SUBCAT = "subcategory";
+        public static final String COLUMN_TRANS_SUBCAT = "subcategory";
         public static final String COLUMN_TRANS_TAXFLAG = "forIncomeTax";
         public static final String COLUMN_TRANS_DATEUPD = "dateUpdated";
         public static final String COLUMN_TRANS_RECURRINGFLAG = "isRecurring";

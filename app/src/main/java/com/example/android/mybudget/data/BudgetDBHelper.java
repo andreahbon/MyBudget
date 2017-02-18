@@ -50,6 +50,26 @@ class BudgetDBHelper extends SQLiteOpenHelper {
             CatEntry.COLUMN_CATNAME + " TEXT NOT NULL)";
         Log.i("BudgetDBHelper",SQL_CREATE_ENTRIES_CAT);
         db.execSQL(SQL_CREATE_ENTRIES_CAT);
+
+        String SQL_CREATE_ENTRIES_ACC =
+                "CREATE TABLE " + AccEntry.TABLE_NAME + " (" +
+                        AccEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        AccEntry.COLUMN_ACCNAME + " TEXT NOT NULL)";
+        Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_ACC);
+        db.execSQL(SQL_CREATE_ENTRIES_ACC);
+
+        String SQL_CREATE_ENTRIES_FILTER_ACC =
+                "CREATE TABLE " + FilterAccEntry.TABLE_NAME + " (" +
+                        FilterAccEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        FilterAccEntry.COLUMN_ACC_ID + " INTEGER NOT NULL)";
+        Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_FILTER_ACC);
+        db.execSQL(SQL_CREATE_ENTRIES_FILTER_ACC);
+        String SQL_CREATE_ENTRIES_FILTER_CAT =
+                "CREATE TABLE " + FilterCatEntry.TABLE_NAME + " (" +
+                        FilterCatEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        FilterCatEntry.COLUMN_CAT_ID+ " INTEGER NOT NULL)";
+        Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_FILTER_CAT);
+        db.execSQL(SQL_CREATE_ENTRIES_FILTER_CAT);
     }
 
     @Override

@@ -7,7 +7,6 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.example.android.mybudget.FilterCatCursorAdapter;
@@ -143,7 +142,6 @@ public class BudgetProvider extends ContentProvider {
         }
     }
 
-    @Nullable
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         final int match = sUriMatcher.match(uri);

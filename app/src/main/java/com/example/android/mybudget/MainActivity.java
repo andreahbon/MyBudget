@@ -1,15 +1,20 @@
 package com.example.android.mybudget;
 
+import android.Manifest;
 import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -21,13 +26,17 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.example.android.mybudget.data.BudgetContract;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
+import com.example.android.mybudget.data.BudgetContract.AccEntry;
 import com.example.android.mybudget.data.BudgetContract.FilterAccEntry;
 import com.example.android.mybudget.data.BudgetContract.FilterCatEntry;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -36,11 +45,16 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
+
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+    private static final int REQUEST_WRITE_STORAGE = 112;
+
     public int REQUEST_FILE_GET = 1;
     public int CHANGE_FILTER = 2;
     private static final int BUDGET_LOADER = 0;
+    private static final int BUDGET_LOADER2 = 10;
     private static final int CAT_LOADER = 1;
     private static final int FILTER_ACC_LOADER = 2;
     private static final int FILTER_CAT_LOADER = 3;
@@ -56,6 +70,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        boolean hasPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+        if (!hasPermission) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
+        }
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_trans);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -81,6 +100,20 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 startActivity(i);
             }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case REQUEST_WRITE_STORAGE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Permission granted, I guess?", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Permission denied.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
     }
 
     @Override
@@ -229,13 +262,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 String sortBy = TransEntry.COLUMN_TRANS_DATE + " ASC";
                 String selectionSt = "";
 
-                if (!filterAccSelection.isEmpty()){
+                if (!filterAccSelection.isEmpty()) {
                     selectionSt = filterAccSelection;
-                    if(!filterCatSelection.isEmpty()) {
+                    if (!filterCatSelection.isEmpty()) {
                         selectionSt += " AND " + filterCatSelection;
                     }
                 } else {
-                    if(!filterCatSelection.isEmpty()){
+                    if (!filterCatSelection.isEmpty()) {
                         selectionSt = filterCatSelection;
                     }
                 }
@@ -272,13 +305,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             case FILTER_CAT_LOADER:
                 filterCatSelection = "";
                 while (cursor.moveToNext()) {
-                    if(filterCatSelection.equals("")){
+                    if (filterCatSelection.equals("")) {
                         filterCatSelection = "(" + TransEntry.COLUMN_TRANS_CAT + "=" + cursor.getInt(cursor.getColumnIndexOrThrow(FilterCatEntry.COLUMN_CAT_ID));
                     } else {
                         filterCatSelection = filterCatSelection + " OR " + TransEntry.COLUMN_TRANS_CAT + "=" + cursor.getInt(cursor.getColumnIndexOrThrow(FilterCatEntry.COLUMN_CAT_ID));
                     }
                 }
-                if(!filterCatSelection.equals("")){
+                if (!filterCatSelection.equals("")) {
                     filterCatSelection += ")";
                 }
                 getLoaderManager().initLoader(CAT_LOADER, null, this);
@@ -312,12 +345,134 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
     public void exportToCSV() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            Toast.makeText(this, "External StorageState = true", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "External StorageState = false", Toast.LENGTH_SHORT).show();
-        }
-    }
+        String[] projection10 = {
+                TransEntry._ID,
+                TransEntry.COLUMN_TRANS_RECONCILEDFLAG,
+                TransEntry.COLUMN_TRANS_DATE,
+                TransEntry.COLUMN_TRANS_DESC,
+                TransEntry.COLUMN_TRANS_EST,
+                TransEntry.COLUMN_TRANS_ACCOUNT,
+                TransEntry.COLUMN_TRANS_AMOUNT,
+                TransEntry.COLUMN_TRANS_CAT,
+                TransEntry.COLUMN_TRANS_SUBCAT,
+                TransEntry.COLUMN_TRANS_TAXFLAG,
+                TransEntry.COLUMN_TRANS_DATEUPD,
+                TransEntry.COLUMN_TRANS_RECURRINGFLAG};
+        String sortBy10 = TransEntry.COLUMN_TRANS_DATE + " ASC";
+        Cursor transCursor = getContentResolver().query(TransEntry.CONTENT_URI, projection10, null, null, sortBy10);
 
+        String columnString1 = TransEntry._ID + "," +
+                TransEntry.COLUMN_TRANS_RECONCILEDFLAG + "," +
+                TransEntry.COLUMN_TRANS_DATE + "," +
+                TransEntry.COLUMN_TRANS_DESC + "," +
+                TransEntry.COLUMN_TRANS_EST + "," +
+                TransEntry.COLUMN_TRANS_ACCOUNT + "," +
+                TransEntry.COLUMN_TRANS_AMOUNT + "," +
+                TransEntry.COLUMN_TRANS_CAT + "," +
+                TransEntry.COLUMN_TRANS_SUBCAT + "," +
+                TransEntry.COLUMN_TRANS_TAXFLAG + "," +
+                TransEntry.COLUMN_TRANS_DATEUPD + "," +
+                TransEntry.COLUMN_TRANS_RECURRINGFLAG;
+
+        String dataString1 = "";
+        while(transCursor.moveToNext()){
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry._ID)) + ",";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECONCILEDFLAG)) + ",";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE)) + ",";
+            dataString1 += transCursor.getString(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DESC)) + ",";
+            dataString1 += transCursor.getString(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_EST)) + ",";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_ACCOUNT)) + ",";
+            dataString1 += transCursor.getFloat(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT)) + ",";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_CAT)) + ",";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_SUBCAT)) + ",";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_TAXFLAG)) + ",";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATEUPD)) + ",";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGFLAG)) + "\n";
+    }
+        transCursor.close();
+        String combinedString1 = columnString1 + "\n" + dataString1;
+
+        String[] projection11 = {
+                CatEntry._ID,
+                CatEntry.COLUMN_CATNAME};
+        String sortBy11 = CatEntry._ID + " ASC";
+        Cursor catCursor = getContentResolver().query(CatEntry.CONTENT_URI, projection11, null, null, sortBy11);
+
+        String columnString2 = CatEntry._ID + "," +
+                CatEntry.COLUMN_CATNAME;
+
+        String dataString2 = "";
+        while(catCursor.moveToNext()){
+            dataString2 += catCursor.getInt(catCursor.getColumnIndexOrThrow(CatEntry._ID)) + ",";
+            dataString2 += catCursor.getString(catCursor.getColumnIndexOrThrow(CatEntry.COLUMN_CATNAME)) + "\n";
+        }
+        catCursor.close();
+        String combinedString2 = columnString2 + "\n" + dataString2;
+
+        String[] projection12 = {
+                AccEntry._ID,
+                AccEntry.COLUMN_ACCNAME};
+        String sortBy12 = AccEntry._ID + " ASC";
+        Cursor accCursor = getContentResolver().query(AccEntry.CONTENT_URI, projection12, null, null, sortBy12);
+
+        String columnString3 = AccEntry._ID + "," + AccEntry.COLUMN_ACCNAME;
+
+        String dataString3 = "";
+        while(accCursor.moveToNext()){
+            dataString3 += accCursor.getInt(accCursor.getColumnIndexOrThrow(AccEntry._ID)) + ",";
+            dataString3 += accCursor.getString(accCursor.getColumnIndexOrThrow(AccEntry.COLUMN_ACCNAME)) + "\n";
+        }
+        accCursor.close();
+        String combinedString3 = columnString3 + "\n" + dataString3;
+
+        File file1 = null;
+        File file2 = null;
+        File file3 = null;
+        File root = Environment.getExternalStorageDirectory();
+        if (root.canWrite()){
+            File dir = new File (root.getAbsolutePath() + "/BudgetData");
+            dir.mkdirs();
+            file1 = new File(dir, "Transactions.csv");
+            file2 = new File(dir, "Categories.csv");
+            file3 = new File(dir, "Accounts.csv");
+            FileOutputStream out1 = null;
+            FileOutputStream out2 = null;
+            FileOutputStream out3 = null;
+            try {
+                out1 = new FileOutputStream(file1);
+                out2 = new FileOutputStream(file2);
+                out3 = new FileOutputStream(file3);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            try {
+                out1.write(combinedString1.getBytes());
+                out2.write(combinedString2.getBytes());
+                out3.write(combinedString3.getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                out1.close();
+                out2.close();
+                out3.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    Uri u1 = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", file1);
+    Uri u2 = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", file2);
+    Uri u3 = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", file3);
+    ArrayList<Uri> uris = new ArrayList<>();
+    uris.add(u1);
+    uris.add(u2);
+    uris.add(u3);
+
+    Intent sendIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+    sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Budget data");
+    sendIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+    sendIntent.setType("text/html");
+    startActivity(sendIntent);
+    }
 }
