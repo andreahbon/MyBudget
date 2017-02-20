@@ -7,6 +7,7 @@ import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -24,9 +25,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.mybudget.data.BudgetContract;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
 import com.example.android.mybudget.data.BudgetContract.AccEntry;
@@ -45,16 +46,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
-
-
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final int REQUEST_WRITE_STORAGE = 112;
+    public static final String PREFS_NAME = "DatePrefs";
 
     public int REQUEST_FILE_GET = 1;
     public int CHANGE_FILTER = 2;
+    public int CHANGE_DATE_FILTER = 3;
     private static final int BUDGET_LOADER = 0;
-    private static final int BUDGET_LOADER2 = 10;
     private static final int CAT_LOADER = 1;
     private static final int FILTER_ACC_LOADER = 2;
     private static final int FILTER_CAT_LOADER = 3;
@@ -66,10 +65,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private String filterAccSelection = "";
     private String filterCatSelection = "";
 
+    private String stDateFrom = "";
+    private String stDateTo = "";
+    private String stFilterType = "";
+    private long dateFrom = 0;
+    private long dateTo = 0;
+
+    TextView tvDateFilter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        tvDateFilter = (TextView) findViewById(R.id.date_filter);
+        readPrefs();
 
         boolean hasPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
         if (!hasPermission) {
@@ -91,6 +101,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         getLoaderManager().initLoader(FILTER_ACC_LOADER, null, this);
 
+        tvDateFilter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent4 = new Intent(v.getContext(), ActivityDateFilter.class);
+                startActivityForResult(intent4, CHANGE_DATE_FILTER);
+            }
+        });
+
         transListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -100,6 +118,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 startActivity(i);
             }
         });
+    }
+
+    public void refresh_activity(){
+        getLoaderManager().restartLoader(BUDGET_LOADER, null, this);
     }
 
     @Override
@@ -180,7 +202,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             startActivity(refresh);
             this.finish();
         }
+        if (requestCode == CHANGE_DATE_FILTER && resultCode == RESULT_OK) {
+            readPrefs();
+            refresh_activity();
+        }
+    }
 
+    public void readPrefs(){
+        SharedPreferences dateFilter = getSharedPreferences(PREFS_NAME, 0);
+        stDateFrom = dateFilter.getString("stDateFrom", "");
+        stDateTo = dateFilter.getString("stDateTo", "");
+        stFilterType = dateFilter.getString("stFilterType", "All transactions");
+        dateFrom = dateFilter.getLong("dateFrom", 0);
+        dateTo = dateFilter.getLong("dateTo", 0);
+        String dateText = String.format(getResources().getString(R.string.date_filter), stFilterType, stDateFrom, stDateTo);
+        tvDateFilter.setText(dateText);
     }
 
     public void saveCSVToDatabase(BufferedReader buffer) throws IOException, ParseException {
@@ -189,49 +225,45 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Date c = new Date(System.currentTimeMillis());
         long todayMilli = c.getTime();
 
-        int reconciledFlag, recurringFlag, category, subcategory, taxFlag, accountID;
+        int id, reconciledFlag, recurringFlag, category, subcategory, taxFlag, accountID;
         long dateTrans, dateUpdated;
         String description, establishment;
         float amount;
 
         while ((line = buffer.readLine()) != null) {
             String[] RowData = line.split(",");
-            if (TextUtils.isEmpty(RowData[0])) {
-                reconciledFlag = 0;
-            } else {
-                reconciledFlag = 1;
-            }
+            if (!RowData[0].equals("_id")) { // skipping the label row here
+                //RowData[0] is the id, so we won't import it
+                reconciledFlag = Integer.parseInt(RowData[1]);
+                dateTrans = Long.parseLong(RowData[2]);
 
-            String dateTransSt = RowData[1];
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            Date dateTransDT = sdf.parse(dateTransSt);
-            dateTrans = dateTransDT.getTime();
+                description = RowData[3];
+                establishment = RowData[4];
 
-            description = RowData[2];
-            establishment = RowData[3];
+                accountID = Integer.parseInt(RowData[5]);
+                amount = Float.valueOf(RowData[6]);
+                category = Integer.parseInt(RowData[7]);
+                subcategory = Integer.parseInt(RowData[8]);
+                taxFlag = Integer.parseInt(RowData[9]);
+                recurringFlag = Integer.parseInt(RowData[11]);
 
-            if (RowData[4].equals("NAB cheque")) {
-                accountID = 0;
-            } else {
-                accountID = 1;
-            }
-            amount = Float.valueOf(RowData[5]);
-            recurringFlag = taxFlag = 0;
+                ContentValues values = new ContentValues();
+                values.put(TransEntry.COLUMN_TRANS_RECONCILEDFLAG, reconciledFlag);
+                values.put(TransEntry.COLUMN_TRANS_DATE, dateTrans);
+                values.put(TransEntry.COLUMN_TRANS_DESC, description);
+                values.put(TransEntry.COLUMN_TRANS_EST, establishment);
+                values.put(TransEntry.COLUMN_TRANS_ACCOUNT, accountID);
+                values.put(TransEntry.COLUMN_TRANS_AMOUNT, amount);
+                values.put(TransEntry.COLUMN_TRANS_CAT, category);
+                values.put(TransEntry.COLUMN_TRANS_SUBCAT, subcategory);
+                values.put(TransEntry.COLUMN_TRANS_RECURRINGFLAG, recurringFlag);
+                values.put(TransEntry.COLUMN_TRANS_TAXFLAG, taxFlag);
+                values.put(TransEntry.COLUMN_TRANS_DATEUPD, todayMilli);
 
-            ContentValues values = new ContentValues();
-            values.put(TransEntry.COLUMN_TRANS_RECONCILEDFLAG, reconciledFlag);
-            values.put(TransEntry.COLUMN_TRANS_DATE, dateTrans);
-            values.put(TransEntry.COLUMN_TRANS_DESC, description);
-            values.put(TransEntry.COLUMN_TRANS_EST, establishment);
-            values.put(TransEntry.COLUMN_TRANS_ACCOUNT, accountID);
-            values.put(TransEntry.COLUMN_TRANS_AMOUNT, amount);
-            values.put(TransEntry.COLUMN_TRANS_RECURRINGFLAG, recurringFlag);
-            values.put(TransEntry.COLUMN_TRANS_TAXFLAG, taxFlag);
-            values.put(TransEntry.COLUMN_TRANS_DATEUPD, todayMilli);
-
-            Uri newUri = getContentResolver().insert(TransEntry.CONTENT_URI, values);
-            if (newUri == null) {
-                Toast.makeText(this, "Error saving transaction", Toast.LENGTH_SHORT).show();
+                Uri newUri = getContentResolver().insert(TransEntry.CONTENT_URI, values);
+                if (newUri == null) {
+                    Toast.makeText(this, "Error saving transaction", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -272,7 +304,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         selectionSt = filterCatSelection;
                     }
                 }
-
+                if (!selectionSt.isEmpty() && dateFrom > 0){
+                    selectionSt += " AND ";
+                }
+                if(dateFrom > 0) {
+                    selectionSt += "(" + TransEntry.COLUMN_TRANS_DATE + " >= " + dateFrom + " AND " + TransEntry.COLUMN_TRANS_DATE + " <= " + dateTo + ")";
+                }
                 return new CursorLoader(this, TransEntry.CONTENT_URI, projection, selectionSt, null, sortBy);
             case CAT_LOADER:
                 String[] projection2 = {

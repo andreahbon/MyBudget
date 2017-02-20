@@ -13,11 +13,10 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-
                 <category android:name="android.intent.category.LAUNCHER"/>
-
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.GET_CONTENT"/>
-
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.OPENABLE"/>
                 <action android:name="android.intent.action.SEND_MULTIPLE"/>
@@ -42,7 +41,11 @@
             android:name=".ActivityFilter"
             android:label="Filter"
             android:parentActivityName=".MainActivity"/>
-
+        <activity
+            android:name=".ActivityDateFilter"
+            android:label="Date Filter"
+            android:parentActivityName=".MainActivity">
+        </activity>
         <provider
             android:name=".data.BudgetProvider"
             android:authorities="com.example.android.mybudget"

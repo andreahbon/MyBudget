@@ -4,6 +4,12 @@
     <string name="export_csv">Export .CSV file</string>
     <string name="manage_categories">Manage Categories</string>
     <string name="manage_accounts">Manage Accounts</string>
+    <string name="date_filter">%1$s - %2$s to %3$s</string>
+    <string name="prompt_datefilter">Select a date filter</string>
+    <string name="pay_period">Pay period</string>
+    <string name="month">Month</string>
+    <string name="custom_period">Custom period</string>
+    <string name="all_transactions">All transactions</string>
     <string name="prompt_cat_name">Category Name</string>
     <string name="prompt_acc_name">Account Name</string>
     <string name="is_reconciled">Reconciled?</string>
