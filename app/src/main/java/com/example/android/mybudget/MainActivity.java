@@ -215,11 +215,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         stFilterType = dateFilter.getString("stFilterType", "All transactions");
         dateFrom = dateFilter.getLong("dateFrom", 0);
         dateTo = dateFilter.getLong("dateTo", 0);
-        String dateText = String.format(getResources().getString(R.string.date_filter), stFilterType, stDateFrom, stDateTo);
+        //Toast.makeText(this, "stFilterType = " + stFilterType, Toast.LENGTH_SHORT).show();
+        String dateText;
+        if (stFilterType.equals("All transactions")){
+            dateText = "All transactions";
+        } else {
+            if (stFilterType.equals("Month")){
+                stFilterType = "This month";
+            }
+            dateText = stFilterType + " - " + stDateFrom + " to " + stDateTo;
+        }
         tvDateFilter.setText(dateText);
     }
 
     public void saveCSVToDatabase(BufferedReader buffer) throws IOException, ParseException {
+        // TODO: The dates on imported transactions display incorrectly (e.g. 14/01/1970), even though the long numbers seem correct - fix this at some point
         String line;
         String fullText = "";
         Date c = new Date(System.currentTimeMillis());

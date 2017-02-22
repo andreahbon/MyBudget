@@ -17,9 +17,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.CursorAdapter;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,6 +38,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class ActivityTransaction extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+    //TODO: Add "Discard changes" dialog when back button is pressed
+
     private static final int BUD_LOADER = 0;
     private static final int CAT_LOADER = 1;
     private static final int ACC_LOADER = 2;
@@ -54,6 +59,10 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     private Spinner mCatSpinner;
     private CheckBox mIncTaxET;
     private CheckBox mRecurrET;
+
+    RadioGroup mTypeRadGroup;
+    RadioButton expButton, incButton, transButton;
+    TextView amountSign;
 
     private CursorAdapter catAdapter;
     private CursorAdapter accAdapter;
@@ -76,6 +85,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
         getLoaderManager().initLoader(CAT_LOADER, null, this);
 
+        mTypeRadGroup = (RadioGroup) findViewById(R.id.trans_type_radgroup);
         mReconcET = (CheckBox) findViewById(R.id.edit_reconc);
         mDateET = (TextView) findViewById(R.id.tv_trans_date);
         mDescET = (EditText) findViewById(R.id.edit_trans_desc);
@@ -94,6 +104,25 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
         catAdapter = new SpCatCursorAdapter(this, null);
         accAdapter = new SpAccCursorAdapter(this, null);
+
+        expButton = (RadioButton) findViewById(mTypeRadGroup.getChildAt(0).getId());
+        incButton = (RadioButton) findViewById(mTypeRadGroup.getChildAt(1).getId());
+        transButton = (RadioButton) findViewById(mTypeRadGroup.getChildAt(2).getId());
+        expButton.setChecked(true); // setting default transaction type as expense
+        amountSign = (TextView) findViewById(R.id.amount_sign);
+        amountSign.setText("-$"); // setting the sign to "-"
+
+        mTypeRadGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                if(incButton.isChecked()){
+                    amountSign.setText("$");
+                }
+                if(expButton.isChecked()){
+                    amountSign.setText("-$");
+                }
+            }
+        });
     }
 
     @Override
@@ -182,7 +211,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         switch (loader.getId()) {
             case BUD_LOADER:
-                DecimalFormat dcFormat = new DecimalFormat("$#,##0.00;-$#,##0.00");
+                DecimalFormat dcFormat = new DecimalFormat("#,##0.00;#,##0.00");
 
                 if (data.moveToFirst()) {
                     int reconcFlag = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECONCILEDFLAG));
@@ -214,7 +243,16 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                     } else {
                         mRecurrET.setChecked(true);
                     }
-                    mAmountET.setText(dcFormat.format(data.getFloat(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT))));
+                    float thisAmount = data.getFloat(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT));
+                    if (thisAmount < 0){
+                        thisAmount = Math.abs(thisAmount);
+                        amountSign.setText("-$");
+                        expButton.setChecked(true);
+                    } else {
+                        amountSign.setText("$");
+                        incButton.setChecked(true);
+                    }
+                    mAmountET.setText(dcFormat.format(thisAmount));
 
                     getCategoryPosition(selectedCategory);
                     getAccountPosition(selectedAccount);
@@ -298,6 +336,9 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             strAmount = strAmount.replace(",", "");
         }
         float amountTrans = Float.valueOf(strAmount);
+        if(expButton.isChecked()){
+            amountTrans *= -1;
+        }
 
         ContentValues values = new ContentValues();
         values.put(TransEntry.COLUMN_TRANS_RECONCILEDFLAG, reconFlag);
