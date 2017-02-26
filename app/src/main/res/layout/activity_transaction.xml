@@ -225,4 +225,80 @@
             android:layout_width="0dp"
             android:layout_weight="2"/>
     </LinearLayout>
+    <LinearLayout
+        android:id="@+id/layout_recoptions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:textColor="@color/primaryText"
+                android:textAppearance="?android:textAppearanceSmall"
+                android:layout_gravity="center_vertical"
+                android:text="@string/repeat_every" />
+            <Spinner
+                android:id="@+id/sp_recperiod"
+                android:layout_gravity="center_vertical"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2">
+            </Spinner>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:textColor="@color/primaryText"
+                android:layout_gravity="center_vertical"
+                android:textAppearance="?android:textAppearanceSmall"
+                android:text="@string/expiry_date" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="8dp"
+                android:text="Date"
+                android:id="@+id/tv_recexpdate"
+                android:onClick="showDatePickerDialog"/>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/if_income"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginBottom="2dp"
+                android:textColor="@color/primaryText"
+                android:textAppearance="?android:textAppearanceSmall"
+                android:layout_gravity="fill"
+                android:paddingBottom="2dp"
+                android:text="@string/use_as_pay" />
+            <CheckBox
+                android:id="@+id/flag_useaspay"
+                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="2"/>
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

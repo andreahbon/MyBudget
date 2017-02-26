@@ -18,7 +18,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,7 +41,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -266,7 +264,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 values.put(TransEntry.COLUMN_TRANS_AMOUNT, amount);
                 values.put(TransEntry.COLUMN_TRANS_CAT, category);
                 values.put(TransEntry.COLUMN_TRANS_SUBCAT, subcategory);
-                values.put(TransEntry.COLUMN_TRANS_RECURRINGFLAG, recurringFlag);
+                values.put(TransEntry.COLUMN_TRANS_RECURRINGID, recurringFlag);
                 values.put(TransEntry.COLUMN_TRANS_TAXFLAG, taxFlag);
                 values.put(TransEntry.COLUMN_TRANS_DATEUPD, todayMilli);
 
@@ -404,7 +402,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 TransEntry.COLUMN_TRANS_SUBCAT,
                 TransEntry.COLUMN_TRANS_TAXFLAG,
                 TransEntry.COLUMN_TRANS_DATEUPD,
-                TransEntry.COLUMN_TRANS_RECURRINGFLAG};
+                TransEntry.COLUMN_TRANS_RECURRINGID};
         String sortBy10 = TransEntry.COLUMN_TRANS_DATE + " ASC";
         Cursor transCursor = getContentResolver().query(TransEntry.CONTENT_URI, projection10, null, null, sortBy10);
 
@@ -419,7 +417,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 TransEntry.COLUMN_TRANS_SUBCAT + "," +
                 TransEntry.COLUMN_TRANS_TAXFLAG + "," +
                 TransEntry.COLUMN_TRANS_DATEUPD + "," +
-                TransEntry.COLUMN_TRANS_RECURRINGFLAG;
+                TransEntry.COLUMN_TRANS_RECURRINGID;
 
         String dataString1 = "";
         while(transCursor.moveToNext()){
@@ -434,7 +432,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_SUBCAT)) + ",";
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_TAXFLAG)) + ",";
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATEUPD)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGFLAG)) + "\n";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGID)) + "\n";
     }
         transCursor.close();
         String combinedString1 = columnString1 + "\n" + dataString1;

@@ -15,6 +15,16 @@
     <string name="expense">Expense</string>
     <string name="income">Income</string>
     <string name="transfer">Transfer</string>
+    <string name="repeat_every">Repeat every</string>
+    <string name="expiry_date">Expiry date</string>
+    <string name="use_as_pay">Use for pay period filter?</string>
+    <string-array name="period_array">
+        <item>Week</item>
+        <item>Fortnight</item>
+        <item>Month</item>
+        <item>Quarter</item>
+        <item>Year</item>
+    </string-array>
     <string name="prompt_cat_name">Category Name</string>
     <string name="prompt_acc_name">Account Name</string>
     <string name="is_reconciled">Reconciled?</string>
@@ -31,6 +41,10 @@
     <string name="action_delete_trans">Delete transaction</string>
     <string name="toast_updated">Transaction updated</string>
     <string name="toast_update_failed">Error updating transaction</string>
+    <string name="toast_rec_updated">Recurring transaction updated</string>
+    <string name="toast_rec_update_failed">Error updating recurring transaction</string>
+    <string name="toast_rec_added">Recurring transaction added</string>
+    <string name="toast_rec_add_failed">Error adding recurring transaction</string>
     <string name="toast_saved">Transaction saved</string>
     <string name="toast_save_failed">Error saving transaction</string>
     <string name="toast_cat_saved">Category saved</string>
