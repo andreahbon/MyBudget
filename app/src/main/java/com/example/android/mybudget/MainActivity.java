@@ -159,6 +159,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 Intent intent2 = new Intent(this, ActivityAccounts.class);
                 startActivity(intent2);
                 return true;
+            case R.id.action_recurring:
+                Intent intent4 = new Intent(this, ActivityRecurring.class);
+                startActivity(intent4);
+                return true;
             case R.id.action_filter:
                 Intent intent3 = new Intent(this, ActivityFilter.class);
                 startActivityForResult(intent3, CHANGE_FILTER);
@@ -423,7 +427,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         while(transCursor.moveToNext()){
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry._ID)) + ",";
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECONCILEDFLAG)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE)) + ",";
+            dataString1 += transCursor.getLong(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE)) + ",";
             dataString1 += transCursor.getString(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DESC)) + ",";
             dataString1 += transCursor.getString(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_EST)) + ",";
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_ACCOUNT)) + ",";
@@ -431,7 +435,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_CAT)) + ",";
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_SUBCAT)) + ",";
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_TAXFLAG)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATEUPD)) + ",";
+            dataString1 += transCursor.getLong(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATEUPD)) + ",";
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGID)) + "\n";
     }
         transCursor.close();

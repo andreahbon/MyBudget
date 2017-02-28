@@ -19,7 +19,7 @@ import com.example.android.mybudget.data.BudgetContract.RecurrEntry;
  */
 
 class BudgetDBHelper extends SQLiteOpenHelper {
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
     private static final String DATABASE_NAME = "mybudget.db";
 
     BudgetDBHelper(Context context){
@@ -75,60 +75,37 @@ class BudgetDBHelper extends SQLiteOpenHelper {
                 "CREATE TABLE " + RecurrEntry.TABLE_NAME + " (" +
                         RecurrEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         RecurrEntry.COLUMN_INIT_TRANS_ID + " INTEGER NOT NULL, " +
-                        RecurrEntry.COLUMN_PERIOD + " INTEGER NOT NULL, " +
-                        RecurrEntry.COLUMN_START_DATE + " INTEGER NOT NULL, " +
-                        RecurrEntry.COLUMN_EXP_DATE + " INTEGER)";
+                        RecurrEntry.COLUMN_CURRENT_DATE + " INTEGER NOT NULL, " +
+                        RecurrEntry.COLUMN_DESCRIPTION + " TEXT NOT NULL, " +
+                        RecurrEntry.COLUMN_ESTABLISHMENT + " TEXT NOT NULL, " +
+                        RecurrEntry.COLUMN_ACCOUNT_ID + " INTEGER NOT NULL, " +
+                        RecurrEntry.COLUMN_AMOUNT + " REAL NOT NULL, " +
+                        RecurrEntry.COLUMN_CAT_ID + " INTEGER, " +
+                        RecurrEntry.COLUMN_INCOME_TAX + " INTEGER, " +
+                        RecurrEntry.COLUMN_PERIOD + " INTEGER NOT NULL)";
         Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_RECURRING);
         db.execSQL(SQL_CREATE_ENTRIES_RECURRING);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 2){
-            String SQL_CREATE_ENTRIES_ACC =
-                    "CREATE TABLE " + AccEntry.TABLE_NAME + " (" +
-                    AccEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    AccEntry.COLUMN_ACCNAME + " TEXT NOT NULL)";
-            Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_ACC);
-            db.execSQL(SQL_CREATE_ENTRIES_ACC);
-        }
-        if(oldVersion < 3){
-            String SQL_CREATE_ENTRIES_FILTER_ACC =
-                    "CREATE TABLE " + FilterAccEntry.TABLE_NAME + " (" +
-                            FilterAccEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                            FilterAccEntry.COLUMN_ACC_ID + " INTEGER NOT NULL)";
-            Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_FILTER_ACC);
-            db.execSQL(SQL_CREATE_ENTRIES_FILTER_ACC);
-            String SQL_CREATE_ENTRIES_FILTER_CAT =
-                    "CREATE TABLE " + FilterCatEntry.TABLE_NAME + " (" +
-                            FilterCatEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                            FilterCatEntry.COLUMN_CAT_ID+ " INTEGER NOT NULL)";
-            Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_FILTER_CAT);
-            db.execSQL(SQL_CREATE_ENTRIES_FILTER_CAT);
-        }
-        if(oldVersion < 4){
-            String SQL_CREATE_ENTRIES_RECURRING =
-                    "CREATE TABLE " + RecurrEntry.TABLE_NAME + " (" +
-                            RecurrEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                            RecurrEntry.COLUMN_INIT_TRANS_ID + " INTEGER NOT NULL, " +
-                            RecurrEntry.COLUMN_START_DATE + " INTEGER NOT NULL, " +
-                            RecurrEntry.COLUMN_EXP_DATE + " INTEGER)";
-            Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_RECURRING);
-            db.execSQL(SQL_CREATE_ENTRIES_RECURRING);
-        }
-        if(oldVersion < 5){
+        if(oldVersion < 6){
             String DROP_TABLE_RECURR = "DROP TABLE IF EXISTS " + RecurrEntry.TABLE_NAME ;
             db.execSQL(DROP_TABLE_RECURR);
             String SQL_CREATE_ENTRIES_RECURRING =
                     "CREATE TABLE " + RecurrEntry.TABLE_NAME + " (" +
                             RecurrEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                             RecurrEntry.COLUMN_INIT_TRANS_ID + " INTEGER NOT NULL, " +
-                            RecurrEntry.COLUMN_PERIOD + " INTEGER NOT NULL, " +
-                            RecurrEntry.COLUMN_START_DATE + " INTEGER NOT NULL, " +
-                            RecurrEntry.COLUMN_EXP_DATE + " INTEGER)";
+                            RecurrEntry.COLUMN_CURRENT_DATE + " INTEGER NOT NULL, " +
+                            RecurrEntry.COLUMN_DESCRIPTION + " TEXT NOT NULL, " +
+                            RecurrEntry.COLUMN_ESTABLISHMENT + " TEXT NOT NULL, " +
+                            RecurrEntry.COLUMN_ACCOUNT_ID + " INTEGER NOT NULL, " +
+                            RecurrEntry.COLUMN_AMOUNT + " REAL NOT NULL, " +
+                            RecurrEntry.COLUMN_CAT_ID + " INTEGER, " +
+                            RecurrEntry.COLUMN_INCOME_TAX + " INTEGER, " +
+                            RecurrEntry.COLUMN_PERIOD + " INTEGER NOT NULL)";
             Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_RECURRING);
             db.execSQL(SQL_CREATE_ENTRIES_RECURRING);
         }
-
     }
 }

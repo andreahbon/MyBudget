@@ -103,9 +103,14 @@ public class BudgetContract {
 
         public static final String _ID = BaseColumns._ID;
         public static final String COLUMN_INIT_TRANS_ID = "intTransID";
+        public static final String COLUMN_CURRENT_DATE = "currdate";
+        public static final String COLUMN_DESCRIPTION = "description";
+        public static final String COLUMN_ESTABLISHMENT = "establishment";
+        public static final String COLUMN_ACCOUNT_ID = "accountID";
+        public static final String COLUMN_AMOUNT = "amount";
+        public static final String COLUMN_CAT_ID = "catID";
+        public static final String COLUMN_INCOME_TAX = "forIncomeTax";
         public static final String COLUMN_PERIOD = "period";
-        public static final String COLUMN_START_DATE = "startdate";
-        public static final String COLUMN_EXP_DATE = "expdate";
 
         public static final int VALUE_PERIOD_WEEKLY = 1;
         public static final int VALUE_PERIOD_FORTNIGHTLY = 2;
