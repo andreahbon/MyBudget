@@ -15,6 +15,7 @@ import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
 import com.example.android.mybudget.data.BudgetContract.FilterAccEntry;
 import com.example.android.mybudget.data.BudgetContract.FilterCatEntry;
+import com.example.android.mybudget.data.BudgetContract.RecurrEntry;
 
 import static android.R.attr.value;
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
@@ -35,6 +36,8 @@ public class BudgetProvider extends ContentProvider {
     private static final int FILTER_CAT_ID = 401;
     private static final int FILTER_ACCOUNTS = 500;
     private static final int FILTER_ACCOUNT_ID = 501;
+    private static final int RECURRING = 600;
+    private static final int RECURRING_ID = 601;
 
 
     private BudgetDBHelper mDbHelper;
@@ -92,6 +95,14 @@ public class BudgetProvider extends ContentProvider {
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
                 cursor = database.query(FilterCatEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
+            case RECURRING:
+                cursor = database.query(RecurrEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
+            case RECURRING_ID:
+                selection = RecurrEntry._ID + "=?";
+                selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
+                cursor = database.query(RecurrEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
             default:
                 throw new IllegalArgumentException("Cannot query unknown URI " + uri);
         }
@@ -111,6 +122,8 @@ public class BudgetProvider extends ContentProvider {
         sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_FILTER_ACCOUNTS + "/#", FILTER_ACCOUNT_ID);
         sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_FILTER_CATS, FILTER_CATS);
         sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_FILTER_CATS + "/#", FILTER_CAT_ID);
+        sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_RECURRING, RECURRING);
+        sUriMatcher.addURI(BudgetContract.CONTENT_AUTHORITY, BudgetContract.PATH_RECURRING + "/#", RECURRING_ID);
     }
 
     @Override
@@ -137,6 +150,10 @@ public class BudgetProvider extends ContentProvider {
                 return FilterCatEntry.CONTENT_LIST_TYPE;
             case FILTER_CAT_ID:
                 return FilterCatEntry.CONTENT_ITEM_TYPE;
+            case RECURRING:
+                return RecurrEntry.CONTENT_LIST_TYPE;
+            case RECURRING_ID:
+                return RecurrEntry.CONTENT_ITEM_TYPE;
             default:
                 throw new   IllegalStateException("Unknown URI " + uri + " with match " + match);
         }
@@ -145,25 +162,31 @@ public class BudgetProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         final int match = sUriMatcher.match(uri);
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        String strTable;
         switch (match){
             case TRANSACTIONS:
-                return insertTransaction(uri, values);
+                strTable = TransEntry.TABLE_NAME;
+                break;
             case CATS:
-                return insertCategory(uri, values);
+                strTable = CatEntry.TABLE_NAME;
+                break;
             case ACCOUNTS:
-                return insertAccount(uri, values);
+                strTable = AccEntry.TABLE_NAME;
+                break;
             case FILTER_ACCOUNTS:
-                return insertFilterAccount(uri, values);
+                strTable = FilterAccEntry.TABLE_NAME;
+                break;
             case FILTER_CATS:
-                return insertFilterCat(uri, values);
+                strTable = FilterCatEntry.TABLE_NAME;
+                break;
+            case RECURRING:
+                strTable = RecurrEntry.TABLE_NAME;
+                break;
             default:
                 throw new IllegalArgumentException("Insertion is not supported for " + uri);
         }
-    }
-
-    public Uri insertTransaction(Uri uri, ContentValues values){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        long mNewID = db.insert(TransEntry.TABLE_NAME, null, values);
+        long mNewID = db.insert(strTable, null, values);
         if (mNewID == -1){
             Log.e(LOG_TAG, "Failed to insert row for " + uri);
             return null;
@@ -172,49 +195,6 @@ public class BudgetProvider extends ContentProvider {
         return ContentUris.withAppendedId(uri, mNewID);
     }
 
-    public Uri insertCategory(Uri uri, ContentValues values){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        long mNewID = db.insert(CatEntry.TABLE_NAME, null, values);
-        if (mNewID == -1){
-            Log.e(LOG_TAG, "Failed to insert row for " + uri);
-            return null;
-        }
-        getContext().getContentResolver().notifyChange(uri, null);
-        return ContentUris.withAppendedId(uri, mNewID);
-    }
-
-    public Uri insertAccount(Uri uri, ContentValues values){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        long mNewID = db.insert(AccEntry.TABLE_NAME, null, values);
-        if (mNewID == -1){
-            Log.e(LOG_TAG, "Failed to insert row for " + uri);
-            return null;
-        }
-        getContext().getContentResolver().notifyChange(uri, null);
-        return ContentUris.withAppendedId(uri, mNewID);
-    }
-
-    public Uri insertFilterAccount(Uri uri, ContentValues values){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        long mNewID = db.insert(FilterAccEntry.TABLE_NAME, null, values);
-        if (mNewID == -1){
-            Log.e(LOG_TAG, "Failed to insert row for " + uri);
-            return null;
-        }
-        getContext().getContentResolver().notifyChange(uri, null);
-        return ContentUris.withAppendedId(uri, mNewID);
-    }
-
-    public Uri insertFilterCat(Uri uri, ContentValues values){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        long mNewID = db.insert(FilterCatEntry.TABLE_NAME, null, values);
-        if (mNewID == -1){
-            Log.e(LOG_TAG, "Failed to insert row for " + uri);
-            return null;
-        }
-        getContext().getContentResolver().notifyChange(uri, null);
-        return ContentUris.withAppendedId(uri, mNewID);
-    }
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
@@ -262,6 +242,14 @@ public class BudgetProvider extends ContentProvider {
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
                 rowsDeleted = db.delete(FilterCatEntry.TABLE_NAME, selection, selectionArgs);
                 break;
+            case RECURRING:
+                rowsDeleted = db.delete(RecurrEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case RECURRING_ID:
+                selection = RecurrEntry._ID + "=?";
+                selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
+                rowsDeleted = db.delete(RecurrEntry.TABLE_NAME, selection, selectionArgs);
+                break;
             default:
                 throw new IllegalArgumentException("Deletion is not supported for " + uri);
         }
@@ -277,25 +265,42 @@ public class BudgetProvider extends ContentProvider {
             return 0;
         }
         final int match = sUriMatcher.match(uri);
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        String strTable;
+
         switch (match){
             case TRANSACTIONS:
-                return updateTransaction(uri, values, selection, selectionArgs);
+                strTable = TransEntry.TABLE_NAME;
+                break;
             case TRANS_ID:
+                strTable = TransEntry.TABLE_NAME;
                 selection = TransEntry._ID + "=?";
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
-                return updateTransaction(uri, values, selection, selectionArgs);
+                break;
             case CATS:
-                return updateCategory(uri, values, selection, selectionArgs);
+                strTable = CatEntry.TABLE_NAME;
+                break;
             case CAT_ID:
+                strTable = CatEntry.TABLE_NAME;
                 selection = CatEntry._ID + "=?";
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
-                return updateCategory(uri, values, selection, selectionArgs);
+                break;
             case ACCOUNTS:
-                return updateAccount(uri, values, selection, selectionArgs);
+                strTable = AccEntry.TABLE_NAME;
+                break;
             case ACC_ID:
+                strTable = AccEntry.TABLE_NAME;
                 selection = AccEntry._ID + "=?";
                 selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
-                return updateAccount(uri, values, selection, selectionArgs);
+                break;
+            case RECURRING:
+                strTable = RecurrEntry.TABLE_NAME;
+                break;
+            case RECURRING_ID:
+                strTable = RecurrEntry.TABLE_NAME;
+                selection = RecurrEntry._ID + "=?";
+                selectionArgs = new String[] {String.valueOf(ContentUris.parseId(uri))};
+                break;
             case FILTER_ACCOUNT_ID:
             case FILTER_ACCOUNTS:
             case FILTER_CAT_ID:
@@ -304,28 +309,7 @@ public class BudgetProvider extends ContentProvider {
             default:
                 throw new IllegalArgumentException("Update is not supported for " + uri);
         }
-    }
-
-    public int updateTransaction(Uri uri, ContentValues values, String selection, String[] selectionArgs){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        int rowsUpdated = db.update(TransEntry.TABLE_NAME, values, selection, selectionArgs);
-        if(rowsUpdated > 0){
-            getContext().getContentResolver().notifyChange(uri, null);
-        }
-        return rowsUpdated;
-    }
-
-    public int updateCategory(Uri uri, ContentValues values, String selection, String[] selectionArgs){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        int rowsUpdated = db.update(CatEntry.TABLE_NAME, values, selection, selectionArgs);
-        if(rowsUpdated > 0){
-            getContext().getContentResolver().notifyChange(uri, null);
-        }
-        return rowsUpdated;
-    }
-    public int updateAccount(Uri uri, ContentValues values, String selection, String[] selectionArgs){
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        int rowsUpdated = db.update(AccEntry.TABLE_NAME, values, selection, selectionArgs);
+        int rowsUpdated = db.update(strTable, values, selection, selectionArgs);
         if(rowsUpdated > 0){
             getContext().getContentResolver().notifyChange(uri, null);
         }

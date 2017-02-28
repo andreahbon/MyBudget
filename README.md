@@ -6,3 +6,5 @@ Functioning app, with transactions and categories tables
 - "Export to CSV" function working (sends Transactions, Categories and Accounts csv files via email)
 - "Import to CSV" function working + date filter started (20/02)
 - Date filter: "All transactions", "Month" and "Custom period" working. Added transaction type to Transaction Activity(22/02)
+- Branch created: started working on recurring transactions table, but things were getting too complicated. Will try a different approach (26/02)
+- Recurring transactions are working. Next, will add "Next Date" column to Recurring table (28/2)

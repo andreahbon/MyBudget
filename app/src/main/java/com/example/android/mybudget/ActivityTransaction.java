@@ -3,6 +3,7 @@ package com.example.android.mybudget;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.LoaderManager;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.DialogInterface;
@@ -13,14 +14,18 @@ import android.net.Uri;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CursorAdapter;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
@@ -30,6 +35,7 @@ import android.widget.Toast;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
 import com.example.android.mybudget.data.BudgetContract.AccEntry;
+import com.example.android.mybudget.data.BudgetContract.RecurrEntry;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -40,34 +46,29 @@ import java.util.Date;
 public class ActivityTransaction extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     //TODO: Add "Discard changes" dialog when back button is pressed
 
-    private static final int BUD_LOADER = 0;
-    private static final int CAT_LOADER = 1;
-    private static final int ACC_LOADER = 2;
-    private Uri mCurrentTransUri;
+    static final int BUD_LOADER = 0;
+    static final int CAT_LOADER = 1;
+    static final int ACC_LOADER = 2;
+    Uri mCurrentTransUri;
 
-    private SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
-    private SimpleDateFormat dfYear = new SimpleDateFormat("yyyy");
-    private SimpleDateFormat dfMonth = new SimpleDateFormat("MM");
-    private SimpleDateFormat dfDay = new SimpleDateFormat("dd");
+    SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+    SimpleDateFormat dfYear = new SimpleDateFormat("yyyy");
+    SimpleDateFormat dfMonth = new SimpleDateFormat("MM");
+    SimpleDateFormat dfDay = new SimpleDateFormat("dd");
 
-    private CheckBox mReconcET;
-    private TextView mDateET;
-    private EditText mDescET;
-    private EditText mEstET;
-    private Spinner mAccSpinner;
-    private EditText mAmountET;
-    private Spinner mCatSpinner;
-    private CheckBox mIncTaxET;
-    private CheckBox mRecurrET;
+    CheckBox mReconcET, mIncTaxET, mRecurrET;
+    TextView mDateET, amountSign;
+    EditText mDescET, mEstET, mAmountET;
+    Spinner mAccSpinner, mCatSpinner, mPeriodSpinner;
 
     RadioGroup mTypeRadGroup;
     RadioButton expButton, incButton, transButton;
-    TextView amountSign;
+    LinearLayout mRecurLayout;
 
-    private CursorAdapter catAdapter;
-    private CursorAdapter accAdapter;
+    CursorAdapter catAdapter, accAdapter;
 
-    private int year, month, day;
+    int year, month, day, transID;
+    int recurrID = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +86,6 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
         getLoaderManager().initLoader(CAT_LOADER, null, this);
 
-        mTypeRadGroup = (RadioGroup) findViewById(R.id.trans_type_radgroup);
         mReconcET = (CheckBox) findViewById(R.id.edit_reconc);
         mDateET = (TextView) findViewById(R.id.tv_trans_date);
         mDescET = (EditText) findViewById(R.id.edit_trans_desc);
@@ -105,6 +105,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         catAdapter = new SpCatCursorAdapter(this, null);
         accAdapter = new SpAccCursorAdapter(this, null);
 
+        mTypeRadGroup = (RadioGroup) findViewById(R.id.trans_type_radgroup);
         expButton = (RadioButton) findViewById(mTypeRadGroup.getChildAt(0).getId());
         incButton = (RadioButton) findViewById(mTypeRadGroup.getChildAt(1).getId());
         transButton = (RadioButton) findViewById(mTypeRadGroup.getChildAt(2).getId());
@@ -112,14 +113,31 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         amountSign = (TextView) findViewById(R.id.amount_sign);
         amountSign.setText("-$"); // setting the sign to "-"
 
+        mRecurLayout = (LinearLayout) findViewById(R.id.layout_recurring);
+        mPeriodSpinner = (Spinner) findViewById(R.id.sp_rec_period);
+        ArrayAdapter<CharSequence> periodAdapter = new ArrayAdapter<>(this, R.layout.period_spinner_list, R.id.sp_period_option);
+        periodAdapter.addAll(getResources().getTextArray(R.array.period_array));
+        mPeriodSpinner.setAdapter(periodAdapter);
+
         mTypeRadGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
+            public void onCheckedChanged(RadioGroup group, int checkedId) { //changes transactions to negative or positive depending on transaction type selected
                 if(incButton.isChecked()){
                     amountSign.setText("$");
                 }
                 if(expButton.isChecked()){
                     amountSign.setText("-$");
+                }
+            }
+        });
+
+        mRecurrET.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(mRecurrET.isChecked()){
+                    mRecurLayout.setVisibility(View.VISIBLE);
+                } else {
+                    mRecurLayout.setVisibility(View.GONE);
                 }
             }
         });
@@ -139,7 +157,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                         TransEntry.COLUMN_TRANS_CAT,
                         TransEntry.COLUMN_TRANS_TAXFLAG,
                         TransEntry.COLUMN_TRANS_DATEUPD,
-                        TransEntry.COLUMN_TRANS_RECURRINGFLAG,
+                        TransEntry.COLUMN_TRANS_RECURRINGID,
                         TransEntry.COLUMN_TRANS_AMOUNT};
                 return new CursorLoader(this, mCurrentTransUri, projection, null, null, null);
             case CAT_LOADER:
@@ -214,6 +232,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                 DecimalFormat dcFormat = new DecimalFormat("#,##0.00;#,##0.00");
 
                 if (data.moveToFirst()) {
+                    transID = data.getInt(data.getColumnIndexOrThrow(TransEntry._ID));
                     int reconcFlag = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECONCILEDFLAG));
                     if (reconcFlag == 0) {
                         mReconcET.setChecked(false);
@@ -237,11 +256,20 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                     } else {
                         mIncTaxET.setChecked(true);
                     }
-                    int recurrFlag = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGFLAG));
-                    if (recurrFlag == 0) {
+                    recurrID = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGID));
+                    if (recurrID == 0) {
                         mRecurrET.setChecked(false);
+                        mRecurLayout.setVisibility(View.GONE);
                     } else {
                         mRecurrET.setChecked(true);
+                        mRecurLayout.setVisibility(View.VISIBLE);
+                        String[] projection = {RecurrEntry._ID, RecurrEntry.COLUMN_PERIOD};
+                        String selection = RecurrEntry._ID + "=?";
+                        String[] selectionArgs = {String.valueOf(recurrID)};
+                        Cursor cursor = getContentResolver().query(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), projection, selection, selectionArgs, null);
+                        cursor.moveToFirst();
+                        int selectPeriodPos = cursor.getInt(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_PERIOD)) - 1;
+                        mPeriodSpinner.setSelection(selectPeriodPos);
                     }
                     float thisAmount = data.getFloat(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT));
                     if (thisAmount < 0){
@@ -323,11 +351,6 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         if (mIncTaxET.isChecked()) {
             taxFlag = 1;
         }
-        int recurFlag = 0;
-        if (mRecurrET.isChecked()) {
-            recurFlag = 1;
-        }
-
         String strAmount = mAmountET.getText().toString().trim();
         if (strAmount.contains("$")) {
             strAmount = strAmount.replace("$", "");
@@ -349,7 +372,6 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         values.put(TransEntry.COLUMN_TRANS_ACCOUNT, accTrans);
         values.put(TransEntry.COLUMN_TRANS_CAT, catTrans);
         values.put(TransEntry.COLUMN_TRANS_TAXFLAG, taxFlag);
-        values.put(TransEntry.COLUMN_TRANS_RECURRINGFLAG, recurFlag);
         values.put(TransEntry.COLUMN_TRANS_AMOUNT, amountTrans);
         if (mCurrentTransUri != null) {
             int updatedRows = getContentResolver().update(mCurrentTransUri, values, null, null);
@@ -362,10 +384,12 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             Uri newUri = getContentResolver().insert(TransEntry.CONTENT_URI, values);
             if (newUri != null) {
                 Toast.makeText(this, getString(R.string.toast_saved), Toast.LENGTH_SHORT).show();
+                transID = (int) ContentUris.parseId(newUri);
             } else {
                 Toast.makeText(this, getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show();
             }
         }
+        updateRecurring(transID, values);
         finish();
     }
 
@@ -390,6 +414,11 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
     private void deleteTrans() {
         if (mCurrentTransUri != null) {
+            // deleting any recurring transaction first
+            String selection = RecurrEntry._ID + "=?";
+            String[] selectionArgs = {String.valueOf(recurrID)};
+            int deletedRows0 = getContentResolver().delete(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), selection, selectionArgs);
+
             int deletedRows = getContentResolver().delete(mCurrentTransUri, null, null);
             if (deletedRows > 0) {
                 Toast.makeText(this, getString(R.string.toast_trans_deleted), Toast.LENGTH_SHORT).show();
@@ -437,6 +466,54 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             if (accAdapter.getItemId(position) == accID) {
                 mAccSpinner.setSelection(position);
             }
+        }
+    }
+
+    private void updateRecurring(int thisTransID, ContentValues transValues){
+        if(mRecurrET.isChecked()){
+            int selectedPeriod = 1;
+            if(mPeriodSpinner.getSelectedItemPosition()!= AdapterView.INVALID_POSITION){
+                selectedPeriod = mPeriodSpinner.getSelectedItemPosition() + 1;
+            }
+            ContentValues values = new ContentValues();
+            values.put(RecurrEntry.COLUMN_INIT_TRANS_ID, thisTransID);
+            values.put(RecurrEntry.COLUMN_CURRENT_DATE, transValues.getAsLong(TransEntry.COLUMN_TRANS_DATE));
+            values.put(RecurrEntry.COLUMN_DESCRIPTION, transValues.getAsString(TransEntry.COLUMN_TRANS_DESC));
+            values.put(RecurrEntry.COLUMN_ESTABLISHMENT, transValues.getAsString(TransEntry.COLUMN_TRANS_EST));
+            values.put(RecurrEntry.COLUMN_ACCOUNT_ID, transValues.getAsInteger(TransEntry.COLUMN_TRANS_ACCOUNT));
+            values.put(RecurrEntry.COLUMN_AMOUNT, transValues.getAsFloat(TransEntry.COLUMN_TRANS_AMOUNT));
+            values.put(RecurrEntry.COLUMN_CAT_ID, transValues.getAsInteger(TransEntry.COLUMN_TRANS_CAT));
+            values.put(RecurrEntry.COLUMN_INCOME_TAX, transValues.getAsInteger(TransEntry.COLUMN_TRANS_TAXFLAG));
+            values.put(RecurrEntry.COLUMN_PERIOD, selectedPeriod);
+            if(recurrID==0) {
+                Uri insertUri = getContentResolver().insert(RecurrEntry.CONTENT_URI, values);
+                if(insertUri!=null){
+                    Toast.makeText(this, getString(R.string.toast_rec_added), Toast.LENGTH_SHORT).show();
+                    values.clear();
+                    values.put(TransEntry.COLUMN_TRANS_RECURRINGID, ContentUris.parseId(insertUri));
+                    String selection = TransEntry._ID + "=?";
+                    String[] selectionArgs = {String.valueOf(thisTransID)};
+                    int updateTrans = getContentResolver().update(ContentUris.withAppendedId(TransEntry.CONTENT_URI, thisTransID), values,
+                        selection, selectionArgs);
+                } else {
+                    Toast.makeText(this, getString(R.string.toast_rec_add_failed), Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                String selection = RecurrEntry._ID + "=?";
+                String[] selectionArgs = {String.valueOf(recurrID)};
+                int updateRec = getContentResolver().update(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), values, selection, selectionArgs);
+            }
+        } else {
+            String selection = RecurrEntry._ID + "=?";
+            String[] selectionArgs = {String.valueOf(recurrID)};
+            int deletedRows = getContentResolver().delete(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), selection, selectionArgs);
+            ContentValues values2 = new ContentValues();
+            values2.put(TransEntry.COLUMN_TRANS_RECURRINGID, 0);
+            String selection2 = TransEntry._ID + "=?";
+            String[] selectionArgs2 = {String.valueOf(thisTransID)};
+            int updateTrans2 = getContentResolver().update(ContentUris.withAppendedId(TransEntry.CONTENT_URI, thisTransID), values2,
+                    selection2, selectionArgs2);
+
         }
     }
 }

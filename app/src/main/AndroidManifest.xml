@@ -13,14 +13,19 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
+
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.GET_CONTENT"/>
+
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.OPENABLE"/>
+
                 <action android:name="android.intent.action.SEND_MULTIPLE"/>
+
                 <category android:name="android.intent.category.DEFAULT"/>
+
                 <data android:mimeType="text/html"/>
             </intent-filter>
         </activity>
@@ -46,6 +51,11 @@
             android:label="Date Filter"
             android:parentActivityName=".MainActivity">
         </activity>
+        <activity
+            android:name=".ActivityRecurring"
+            android:label="Recurring Activities"
+            android:parentActivityName=".MainActivity">
+        </activity>
         <provider
             android:name=".data.BudgetProvider"
             android:authorities="com.example.android.mybudget"
@@ -59,5 +69,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths"/>
         </provider>
+
     </application>
+
 </manifest>

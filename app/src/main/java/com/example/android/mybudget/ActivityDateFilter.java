@@ -25,6 +25,8 @@ import static com.example.android.mybudget.R.id.date;
 
 
 public class ActivityDateFilter extends AppCompatActivity {
+    //TODO: implement "Pay Period" option when recurring transactions have been set up
+
     public static final String PREFS_NAME = "DatePrefs";
 
     SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");

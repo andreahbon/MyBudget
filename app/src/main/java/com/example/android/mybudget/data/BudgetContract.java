@@ -16,6 +16,7 @@ public class BudgetContract {
     static final String PATH_ACCOUNTS = "accounts";
     static final String PATH_FILTER_CATS = "filtercats";
     static final String PATH_FILTER_ACCOUNTS = "filteraccounts";
+    static final String PATH_RECURRING = "recurring";
 
     public static abstract class TransEntry implements BaseColumns {
         public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, PATH_TRANS);
@@ -34,7 +35,7 @@ public class BudgetContract {
         public static final String COLUMN_TRANS_SUBCAT = "subcategory";
         public static final String COLUMN_TRANS_TAXFLAG = "forIncomeTax";
         public static final String COLUMN_TRANS_DATEUPD = "dateUpdated";
-        public static final String COLUMN_TRANS_RECURRINGFLAG = "isRecurring";
+        public static final String COLUMN_TRANS_RECURRINGID = "isRecurring"; // now used to store the recurring transaction ID
 
         static final String CONTENT_LIST_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
                 + CONTENT_AUTHORITY + "/" + PATH_TRANS;
@@ -94,5 +95,32 @@ public class BudgetContract {
                 + CONTENT_AUTHORITY + "/" + PATH_FILTER_ACCOUNTS;
         static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/"
                 + CONTENT_AUTHORITY + "/" + PATH_FILTER_ACCOUNTS;
+    }
+
+    public static abstract class RecurrEntry implements BaseColumns{
+        public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, PATH_RECURRING);
+        static final String TABLE_NAME = "recurring";
+
+        public static final String _ID = BaseColumns._ID;
+        public static final String COLUMN_INIT_TRANS_ID = "intTransID";
+        public static final String COLUMN_CURRENT_DATE = "currdate";
+        public static final String COLUMN_DESCRIPTION = "description";
+        public static final String COLUMN_ESTABLISHMENT = "establishment";
+        public static final String COLUMN_ACCOUNT_ID = "accountID";
+        public static final String COLUMN_AMOUNT = "amount";
+        public static final String COLUMN_CAT_ID = "catID";
+        public static final String COLUMN_INCOME_TAX = "forIncomeTax";
+        public static final String COLUMN_PERIOD = "period";
+
+        public static final int VALUE_PERIOD_WEEKLY = 1;
+        public static final int VALUE_PERIOD_FORTNIGHTLY = 2;
+        public static final int VALUE_PERIOD_MONTHLY = 3;
+        public static final int VALUE_PERIOD_QUARTERLY = 4;
+        public static final int VALUE_PERIOD_YEARLY = 5;
+
+        static final String CONTENT_LIST_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
+                + CONTENT_AUTHORITY + "/" + PATH_RECURRING;
+        static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/"
+                + CONTENT_AUTHORITY + "/" + PATH_RECURRING;
     }
 }
