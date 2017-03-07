@@ -32,10 +32,13 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.mybudget.data.BudgetContract;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
 import com.example.android.mybudget.data.BudgetContract.AccEntry;
 import com.example.android.mybudget.data.BudgetContract.RecurrEntry;
+
+import com.example.android.mybudget.FunctionHelper;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -67,8 +70,10 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
     CursorAdapter catAdapter, accAdapter;
 
-    int year, month, day, transID;
+    int year, month, day, transID, mSelectedPeriod, accTrans;
     int recurrID = 0;
+    long oldDate, newDate;
+    float accBalance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +89,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             setTitle("Add a transaction");
         }
 
+        oldDate =  32535090000000L;
         getLoaderManager().initLoader(CAT_LOADER, null, this);
 
         mReconcET = (CheckBox) findViewById(R.id.edit_reconc);
@@ -158,7 +164,8 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                         TransEntry.COLUMN_TRANS_TAXFLAG,
                         TransEntry.COLUMN_TRANS_DATEUPD,
                         TransEntry.COLUMN_TRANS_RECURRINGID,
-                        TransEntry.COLUMN_TRANS_AMOUNT};
+                        TransEntry.COLUMN_TRANS_AMOUNT,
+                        TransEntry.COLUMN_ACCOUNT_BALANCE};
                 return new CursorLoader(this, mCurrentTransUri, projection, null, null, null);
             case CAT_LOADER:
                 String[] projection2 = {
@@ -232,6 +239,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                 DecimalFormat dcFormat = new DecimalFormat("#,##0.00;#,##0.00");
 
                 if (data.moveToFirst()) {
+                    accBalance = data.getFloat(data.getColumnIndexOrThrow(TransEntry.COLUMN_ACCOUNT_BALANCE));
                     transID = data.getInt(data.getColumnIndexOrThrow(TransEntry._ID));
                     int reconcFlag = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECONCILEDFLAG));
                     if (reconcFlag == 0) {
@@ -243,11 +251,13 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                     year = Integer.parseInt(dfYear.format(date));
                     month = Integer.parseInt(dfMonth.format(date)) - 1;
                     day = Integer.parseInt(dfDay.format(date));
+                    oldDate = data.getLong(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE));
 
                     mDateET.setText(df.format(date));
                     mDescET.setText(data.getString(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DESC)));
                     mEstET.setText(data.getString(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_EST)));
                     int selectedAccount = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_ACCOUNT));
+                    accTrans = selectedAccount;
                     int selectedCategory = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_CAT));
 
                     int incTaxFlag = data.getInt(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_TAXFLAG));
@@ -268,7 +278,8 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                         String[] selectionArgs = {String.valueOf(recurrID)};
                         Cursor cursor = getContentResolver().query(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), projection, selection, selectionArgs, null);
                         cursor.moveToFirst();
-                        int selectPeriodPos = cursor.getInt(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_PERIOD)) - 1;
+                        mSelectedPeriod = cursor.getInt(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_PERIOD));
+                        int selectPeriodPos = mSelectedPeriod - 1;
                         mPeriodSpinner.setSelection(selectPeriodPos);
                     }
                     float thisAmount = data.getFloat(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT));
@@ -338,13 +349,14 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         String dateTransSt = mDateET.getText().toString();
         Date dateTransDT = df.parse(dateTransSt);
         long dateTrans = dateTransDT.getTime();
+        newDate = dateTrans;
 
         Date c = new Date(System.currentTimeMillis());
         long todayMilli = c.getTime();
 
         String descTrans = mDescET.getText().toString().trim();
         String estTrans = mEstET.getText().toString().trim();
-        int accTrans = (int) mAccSpinner.getSelectedItemId();
+        accTrans = (int) mAccSpinner.getSelectedItemId();
         int catTrans = (int) mCatSpinner.getSelectedItemId();
 
         int taxFlag = 0;
@@ -390,6 +402,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             }
         }
         updateRecurring(transID, values);
+        FunctionHelper.updateBalance(this, transID, oldDate, newDate, accTrans);
         finish();
     }
 
@@ -415,9 +428,35 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     private void deleteTrans() {
         if (mCurrentTransUri != null) {
             // deleting any recurring transaction first
-            String selection = RecurrEntry._ID + "=?";
+            String[] projection = {TransEntry._ID, TransEntry.COLUMN_TRANS_RECURRINGID,
+                    TransEntry.COLUMN_TRANS_DATE};
+            String selection = TransEntry.COLUMN_TRANS_RECURRINGID + "=?";
             String[] selectionArgs = {String.valueOf(recurrID)};
-            int deletedRows0 = getContentResolver().delete(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), selection, selectionArgs);
+            String sortBy = TransEntry.COLUMN_TRANS_DATE + " DESC";
+            // first, check how many transactions there are with this recurring ID
+            Cursor cursor = getContentResolver().query(TransEntry.CONTENT_URI, projection, selection, selectionArgs, sortBy);
+            cursor.moveToFirst();
+            // if there is only one, delete the recurring transaction
+            if(cursor.getCount() == 1){
+                String selectionRec = RecurrEntry._ID + "=?";
+                int deletedRecRows = getContentResolver().delete(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), selectionRec, selectionArgs);
+            } else {
+                // if there are more than one transactions with this rec ID, but this one is the latest one, update the next date in the
+                // recurring table with a new next date = date of second-to-last transaction + period
+                if(cursor.getCount() > 1 && cursor.getInt(cursor.getColumnIndexOrThrow(TransEntry._ID)) == transID){
+                    cursor.moveToNext();
+                    long longCurrDate = cursor.getLong(cursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE));
+                    Date nextDate = FunctionHelper.calculateNextDate(mSelectedPeriod, longCurrDate);
+                    Log.i("longCurrDate", "longCurrDate = "+ longCurrDate);
+                    long longNextDate = nextDate.getTime();
+
+                    ContentValues valuesRec = new ContentValues();
+                    valuesRec.put(RecurrEntry.COLUMN_NEXT_DATE, longNextDate);
+                    String selectionRec = RecurrEntry._ID + "=?";
+                    String[] selectionArgsRec = {String.valueOf(recurrID)};
+                    int updatedRec = getContentResolver().update(RecurrEntry.CONTENT_URI, valuesRec, selectionRec, selectionArgsRec);
+                }
+            }
 
             int deletedRows = getContentResolver().delete(mCurrentTransUri, null, null);
             if (deletedRows > 0) {
@@ -425,6 +464,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             } else {
                 Toast.makeText(this, getString(R.string.toast_trans_delete_failed), Toast.LENGTH_SHORT).show();
             }
+            FunctionHelper.updateBalance(this, transID, oldDate, oldDate, accTrans);
             finish();
         }
     }
@@ -475,6 +515,9 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             if(mPeriodSpinner.getSelectedItemPosition()!= AdapterView.INVALID_POSITION){
                 selectedPeriod = mPeriodSpinner.getSelectedItemPosition() + 1;
             }
+            Date nextDate = FunctionHelper.calculateNextDate(selectedPeriod, transValues.getAsLong(TransEntry.COLUMN_TRANS_DATE));
+            long longDate = nextDate.getTime();
+
             ContentValues values = new ContentValues();
             values.put(RecurrEntry.COLUMN_INIT_TRANS_ID, thisTransID);
             values.put(RecurrEntry.COLUMN_CURRENT_DATE, transValues.getAsLong(TransEntry.COLUMN_TRANS_DATE));
@@ -485,6 +528,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             values.put(RecurrEntry.COLUMN_CAT_ID, transValues.getAsInteger(TransEntry.COLUMN_TRANS_CAT));
             values.put(RecurrEntry.COLUMN_INCOME_TAX, transValues.getAsInteger(TransEntry.COLUMN_TRANS_TAXFLAG));
             values.put(RecurrEntry.COLUMN_PERIOD, selectedPeriod);
+            values.put(RecurrEntry.COLUMN_NEXT_DATE, longDate);
             if(recurrID==0) {
                 Uri insertUri = getContentResolver().insert(RecurrEntry.CONTENT_URI, values);
                 if(insertUri!=null){
@@ -513,7 +557,6 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             String[] selectionArgs2 = {String.valueOf(thisTransID)};
             int updateTrans2 = getContentResolver().update(ContentUris.withAppendedId(TransEntry.CONTENT_URI, thisTransID), values2,
                     selection2, selectionArgs2);
-
         }
     }
 }

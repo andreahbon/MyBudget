@@ -19,7 +19,7 @@ import com.example.android.mybudget.data.BudgetContract.RecurrEntry;
  */
 
 class BudgetDBHelper extends SQLiteOpenHelper {
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 8;
     private static final String DATABASE_NAME = "mybudget.db";
 
     BudgetDBHelper(Context context){
@@ -41,7 +41,8 @@ class BudgetDBHelper extends SQLiteOpenHelper {
             TransEntry.COLUMN_TRANS_SUBCAT + " INTEGER, " +
             TransEntry.COLUMN_TRANS_TAXFLAG + " INTEGER, " +
             TransEntry.COLUMN_TRANS_DATEUPD + " INTEGER NOT NULL, " +
-            TransEntry.COLUMN_TRANS_RECURRINGID + " INTEGER)";
+            TransEntry.COLUMN_TRANS_RECURRINGID + " INTEGER, " +
+            TransEntry.COLUMN_ACCOUNT_BALANCE + " REAL)";
         Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES);
         db.execSQL(SQL_CREATE_ENTRIES);
 
@@ -82,7 +83,8 @@ class BudgetDBHelper extends SQLiteOpenHelper {
                         RecurrEntry.COLUMN_AMOUNT + " REAL NOT NULL, " +
                         RecurrEntry.COLUMN_CAT_ID + " INTEGER, " +
                         RecurrEntry.COLUMN_INCOME_TAX + " INTEGER, " +
-                        RecurrEntry.COLUMN_PERIOD + " INTEGER NOT NULL)";
+                        RecurrEntry.COLUMN_PERIOD + " INTEGER NOT NULL" +
+                        RecurrEntry.COLUMN_NEXT_DATE + " INTEGER)";
         Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_RECURRING);
         db.execSQL(SQL_CREATE_ENTRIES_RECURRING);
     }
@@ -106,6 +108,18 @@ class BudgetDBHelper extends SQLiteOpenHelper {
                             RecurrEntry.COLUMN_PERIOD + " INTEGER NOT NULL)";
             Log.i("BudgetDBHelper", SQL_CREATE_ENTRIES_RECURRING);
             db.execSQL(SQL_CREATE_ENTRIES_RECURRING);
+        }
+        if(oldVersion < 7){
+            String SQL_ALTER_REC_TABLE =
+                    "ALTER TABLE " + RecurrEntry.TABLE_NAME + " ADD COLUMN " + RecurrEntry.COLUMN_NEXT_DATE + " INTEGER";
+            Log.i("BudgetDBHelper", SQL_ALTER_REC_TABLE);
+            db.execSQL(SQL_ALTER_REC_TABLE);
+        }
+        if(oldVersion < 8){
+            String SQL_ALTER_TRANS_TABLE =
+                    "ALTER TABLE " + TransEntry.TABLE_NAME + " ADD COLUMN " + TransEntry.COLUMN_ACCOUNT_BALANCE + " REAL";
+            Log.i("BudgetDBHelper", SQL_ALTER_TRANS_TABLE);
+            db.execSQL(SQL_ALTER_TRANS_TABLE);
         }
     }
 }

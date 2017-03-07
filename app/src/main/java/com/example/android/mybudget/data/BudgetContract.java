@@ -36,6 +36,7 @@ public class BudgetContract {
         public static final String COLUMN_TRANS_TAXFLAG = "forIncomeTax";
         public static final String COLUMN_TRANS_DATEUPD = "dateUpdated";
         public static final String COLUMN_TRANS_RECURRINGID = "isRecurring"; // now used to store the recurring transaction ID
+        public static final String COLUMN_ACCOUNT_BALANCE = "account_balance"; // added on 6/03/2017 to store account balance
 
         static final String CONTENT_LIST_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
                 + CONTENT_AUTHORITY + "/" + PATH_TRANS;
@@ -111,6 +112,7 @@ public class BudgetContract {
         public static final String COLUMN_CAT_ID = "catID";
         public static final String COLUMN_INCOME_TAX = "forIncomeTax";
         public static final String COLUMN_PERIOD = "period";
+        public static final String COLUMN_NEXT_DATE = "nextdate";
 
         public static final int VALUE_PERIOD_WEEKLY = 1;
         public static final int VALUE_PERIOD_FORTNIGHTLY = 2;

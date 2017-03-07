@@ -18,15 +18,18 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.mybudget.FunctionHelper;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
 import com.example.android.mybudget.data.BudgetContract.AccEntry;
@@ -40,9 +43,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
+
+import static com.example.android.mybudget.FunctionHelper.displayBalance;
+import static com.example.android.mybudget.R.id.amount;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final int REQUEST_WRITE_STORAGE = 112;
@@ -59,17 +66,19 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private ArrayList<Integer> catIDs = new ArrayList<>();
     private ArrayList<String> catNames = new ArrayList<>();
+    ArrayList<Integer> accIDs = new ArrayList<>();
 
     private String filterAccSelection = "";
     private String filterCatSelection = "";
 
-    private String stDateFrom = "";
-    private String stDateTo = "";
-    private String stFilterType = "";
+    String stDateFrom = "";
+    String stDateTo = "";
+    String stFilterType = "";
     private long dateFrom = 0;
     private long dateTo = 0;
 
     TextView tvDateFilter;
+    ImageView prevButton, nextButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +86,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         setContentView(R.layout.activity_main);
 
         tvDateFilter = (TextView) findViewById(R.id.date_filter);
+        prevButton = (ImageView) findViewById(R.id.prev_button);
+        nextButton = (ImageView) findViewById(R.id.next_button);
         readPrefs();
 
         boolean hasPermission = (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
@@ -114,6 +125,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 Intent i = new Intent(MainActivity.this, ActivityTransaction.class);
                 i.setData(prodUri);
                 startActivity(i);
+            }
+        });
+
+        nextButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                //TODO: implement next and prev buttons
+                Toast.makeText(MainActivity.this, "Next button clicked!", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -217,13 +236,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         stFilterType = dateFilter.getString("stFilterType", "All transactions");
         dateFrom = dateFilter.getLong("dateFrom", 0);
         dateTo = dateFilter.getLong("dateTo", 0);
-        //Toast.makeText(this, "stFilterType = " + stFilterType, Toast.LENGTH_SHORT).show();
         String dateText;
+        prevButton.setVisibility(View.INVISIBLE);
+        nextButton.setVisibility(View.INVISIBLE);
         if (stFilterType.equals("All transactions")){
             dateText = "All transactions";
         } else {
             if (stFilterType.equals("Month")){
                 stFilterType = "This month";
+                prevButton.setVisibility(View.VISIBLE);
+                nextButton.setVisibility(View.VISIBLE);
             }
             dateText = stFilterType + " - " + stDateFrom + " to " + stDateTo;
         }
@@ -340,6 +362,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             case FILTER_ACC_LOADER:
                 filterAccSelection = "";
                 while (cursor.moveToNext()) {
+                    accIDs.add(cursor.getInt(cursor.getColumnIndexOrThrow(FilterAccEntry.COLUMN_ACC_ID)));
                     if (filterAccSelection.equals("")) {
                         filterAccSelection = "(" + TransEntry.COLUMN_TRANS_ACCOUNT + "=" + cursor.getInt(cursor.getColumnIndexOrThrow(FilterAccEntry.COLUMN_ACC_ID));
                     } else {
@@ -373,6 +396,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 break;
             case BUDGET_LOADER:
                 budAdapter.swapCursor(cursor);
+                long dateBalance;
+                if(dateTo==0){
+                    dateBalance = 32535090000000L;
+                } else {
+                    dateBalance = dateTo;
+                }
+                float totalBalance = FunctionHelper.displayBalance(this, accIDs, dateBalance);
+                DecimalFormat dcFormat = new DecimalFormat("$#,##0.00;-$#,##0.00");
+                TextView balanceTV = (TextView) findViewById(R.id.balance_textview);
+                String strBalance;
+                strBalance = "Balance: " + dcFormat.format(totalBalance);
+                if(!stDateTo.isEmpty()){
+                    strBalance += " as of " + stDateTo;
+                }
+                balanceTV.setText(strBalance);
                 break;
         }
     }
@@ -406,7 +444,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 TransEntry.COLUMN_TRANS_SUBCAT,
                 TransEntry.COLUMN_TRANS_TAXFLAG,
                 TransEntry.COLUMN_TRANS_DATEUPD,
-                TransEntry.COLUMN_TRANS_RECURRINGID};
+                TransEntry.COLUMN_TRANS_RECURRINGID,
+                TransEntry.COLUMN_ACCOUNT_BALANCE};
         String sortBy10 = TransEntry.COLUMN_TRANS_DATE + " ASC";
         Cursor transCursor = getContentResolver().query(TransEntry.CONTENT_URI, projection10, null, null, sortBy10);
 
@@ -421,7 +460,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 TransEntry.COLUMN_TRANS_SUBCAT + "," +
                 TransEntry.COLUMN_TRANS_TAXFLAG + "," +
                 TransEntry.COLUMN_TRANS_DATEUPD + "," +
-                TransEntry.COLUMN_TRANS_RECURRINGID;
+                TransEntry.COLUMN_TRANS_RECURRINGID + "," +
+                TransEntry.COLUMN_ACCOUNT_BALANCE;
 
         String dataString1 = "";
         while(transCursor.moveToNext()){
@@ -436,7 +476,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_SUBCAT)) + ",";
             dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_TAXFLAG)) + ",";
             dataString1 += transCursor.getLong(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATEUPD)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGID)) + "\n";
+            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGID)) + ",";
+            dataString1 += transCursor.getFloat(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_ACCOUNT_BALANCE)) + "\n";
     }
         transCursor.close();
         String combinedString1 = columnString1 + "\n" + dataString1;

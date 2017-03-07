@@ -8,3 +8,4 @@ Functioning app, with transactions and categories tables
 - Date filter: "All transactions", "Month" and "Custom period" working. Added transaction type to Transaction Activity(22/02)
 - Branch created: started working on recurring transactions table, but things were getting too complicated. Will try a different approach (26/02)
 - Recurring transactions are working. Next, will add "Next Date" column to Recurring table (28/2)
+- Recurring transactions are complete and now balances are in place as well (08/03)

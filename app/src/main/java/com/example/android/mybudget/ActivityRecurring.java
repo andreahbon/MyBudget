@@ -1,6 +1,7 @@
 package com.example.android.mybudget;
 
 import android.app.LoaderManager;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Loader;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 import com.example.android.mybudget.data.BudgetContract;
 import com.example.android.mybudget.data.BudgetContract.RecurrEntry;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
+import com.example.android.mybudget.FunctionHelper;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -84,8 +86,9 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
                     RecurrEntry.COLUMN_DESCRIPTION,
                     RecurrEntry.COLUMN_ESTABLISHMENT,
                     RecurrEntry.COLUMN_CURRENT_DATE,
-                    RecurrEntry.COLUMN_AMOUNT};
-            String sortBy = RecurrEntry.COLUMN_CURRENT_DATE + " ASC";
+                    RecurrEntry.COLUMN_AMOUNT,
+                    RecurrEntry.COLUMN_NEXT_DATE};
+            String sortBy = RecurrEntry.COLUMN_NEXT_DATE + " ASC";
             return new CursorLoader(this, RecurrEntry.CONTENT_URI, projection, null, null, sortBy);
         } else {
             return null;
@@ -141,6 +144,7 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
                 e.printStackTrace();
             }
             long dateTrans = dateTransDT.getTime();
+            int accNumber = cursor.getInt(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_ACCOUNT_ID));
 
             ContentValues values = new ContentValues();
             values.put(TransEntry.COLUMN_TRANS_RECONCILEDFLAG, 0);
@@ -148,7 +152,7 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
             values.put(TransEntry.COLUMN_TRANS_DATEUPD, todayMilli);
             values.put(TransEntry.COLUMN_TRANS_DESC, cursor.getString(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_DESCRIPTION)));
             values.put(TransEntry.COLUMN_TRANS_EST, cursor.getString(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_ESTABLISHMENT)));
-            values.put(TransEntry.COLUMN_TRANS_ACCOUNT, cursor.getInt(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_ACCOUNT_ID)));
+            values.put(TransEntry.COLUMN_TRANS_ACCOUNT, accNumber);
             values.put(TransEntry.COLUMN_TRANS_CAT, cursor.getInt(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_CAT_ID)));
             values.put(TransEntry.COLUMN_TRANS_TAXFLAG, cursor.getInt(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_INCOME_TAX)));
             values.put(TransEntry.COLUMN_TRANS_AMOUNT, cursor.getFloat(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_AMOUNT)));
@@ -156,8 +160,14 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
             Uri insertedTrans = getContentResolver().insert(TransEntry.CONTENT_URI, values);
 
             values.clear();
+            Date nextDate = FunctionHelper.calculateNextDate(cursor.getInt(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_PERIOD)), dateTrans);
+            long longNextDate = nextDate.getTime();
             values.put(RecurrEntry.COLUMN_CURRENT_DATE, dateTrans);
+            values.put(RecurrEntry.COLUMN_NEXT_DATE, longNextDate);
             int updatedRec = getContentResolver().update(RecurrEntry.CONTENT_URI, values, selection, selectionArgs);
+            // now, we need to update the account balance after adding the recurring transaction
+            int transID = (int) ContentUris.parseId(insertedTrans);
+            FunctionHelper.updateBalance(this, transID, dateTrans, dateTrans, accNumber);
         }
     }
 }

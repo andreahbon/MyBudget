@@ -12,29 +12,57 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="6dp"
-        android:orientation="vertical">
+        android:orientation="horizontal">
+        <ImageView
+            android:id="@+id/prev_button"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_navigate_next_black_24dp"
+            android:rotation="180"/>
         <TextView
             android:id="@+id/date_filter"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
+            android:layout_weight="6"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
+            android:gravity="center_horizontal|center_vertical"
             android:text="@string/date_filter"
             android:textAppearance="?android:textAppearanceSmall"/>
+        <ImageView
+            android:id="@+id/next_button"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_navigate_next_black_24dp"/>
     </LinearLayout>
     <ListView
         android:id="@+id/trans_listview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/date_header"
+        android:layout_above="@+id/balance_textview"
         android:clipToPadding="false"
         android:paddingBottom="60dp">
     </ListView>
+    <TextView
+        android:id="@+id/balance_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_alignParentBottom="true"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:textColor="@color/primaryText"
+        android:text="Balance: $111,000.00 as of 22/02/2017"/>
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab_trans"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:layout_margin="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="16dp"
         android:src="@drawable/ic_add_white_48dp"/>
 </RelativeLayout>

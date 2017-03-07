@@ -1,8 +1,23 @@
 package com.example.android.mybudget;
 
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.widget.AdapterView;
+import android.widget.Toast;
+
+import com.example.android.mybudget.data.BudgetContract;
+import com.example.android.mybudget.data.BudgetContract.TransEntry;
+import com.example.android.mybudget.data.BudgetContract.AccEntry;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+
+import static java.security.AccessController.getContext;
 
 /**
  * Created by andre on 28/02/2017.
@@ -76,5 +91,83 @@ public class FunctionHelper {
                 break;
         }
         return nextDate;
+    }
+
+    public static void updateBalance(Context context, int transID, long oldDate, long newDate, int accNumber){
+        long thisDate;
+        float currBalance = 0;
+
+        if(newDate > oldDate){
+            thisDate = oldDate;
+        } else {
+            thisDate = newDate;
+        }
+
+        // finding the transaction immediately before the relevant transaction to get its balance
+        String[] projection = {
+                TransEntry._ID,
+                TransEntry.COLUMN_TRANS_DATE,
+                TransEntry.COLUMN_TRANS_ACCOUNT,
+                TransEntry.COLUMN_TRANS_AMOUNT,
+                TransEntry.COLUMN_ACCOUNT_BALANCE};
+        String selection1 = TransEntry.COLUMN_TRANS_ACCOUNT + "=? AND " + TransEntry.COLUMN_TRANS_DATE + "<=? AND " + TransEntry._ID + "<?";
+        String[] selectionArgs1 = {String.valueOf(accNumber),
+                String.valueOf(thisDate), String.valueOf(transID)};
+        String sortBy1 = TransEntry.COLUMN_TRANS_DATE + " DESC, " + TransEntry._ID + " DESC LIMIT 1";
+        Cursor cursor1 = context.getContentResolver().query(TransEntry.CONTENT_URI, projection, selection1, selectionArgs1, sortBy1);
+
+        if(cursor1.getCount() >= 1){
+            cursor1.moveToFirst();
+            currBalance = cursor1.getFloat(cursor1.getColumnIndexOrThrow(TransEntry.COLUMN_ACCOUNT_BALANCE));
+        }
+
+        // now, we'll update all transactions that take place after the relevant transaction
+        String selection2 = TransEntry.COLUMN_TRANS_ACCOUNT + "=? AND " + TransEntry.COLUMN_TRANS_DATE + ">=?";
+        String[] selectionArgs2 = {String.valueOf(accNumber), String.valueOf(thisDate)};
+        String sortBy2 = TransEntry.COLUMN_TRANS_DATE + " ASC, " + TransEntry._ID + " ASC";
+        Cursor cursor2 = context.getContentResolver().query(TransEntry.CONTENT_URI, projection, selection2, selectionArgs2, sortBy2);
+        while (cursor2.moveToNext()){
+            long cursorDate = cursor2.getLong(cursor2.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE));
+            int cursorID = cursor2.getInt(cursor2.getColumnIndexOrThrow(TransEntry._ID));
+            float cursorAmount = cursor2.getFloat(cursor2.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT));
+            if(cursorDate == thisDate && cursorID < transID){
+                continue;
+            }
+            currBalance += cursorAmount;
+            // update transaction with new balance
+            ContentValues values = new ContentValues();
+            values.put(TransEntry.COLUMN_ACCOUNT_BALANCE, currBalance);
+            String selection3 = TransEntry._ID + "=?";
+            String[] selectionArgs3 = {String.valueOf(cursorID)};
+            int updatedRows = context.getContentResolver().update(TransEntry.CONTENT_URI, values, selection3, selectionArgs3);
+        }
+    }
+
+    public static float displayBalance(Context context, ArrayList<Integer> accIDs, long dateTo){
+
+        float totalBalance = 0;
+        if(accIDs.size()<1){ // if there are no accounts selected in the filter, tally up the total for all accounts
+            String[] projection0 = {AccEntry._ID};
+            Cursor cursor0 = context.getContentResolver().query(AccEntry.CONTENT_URI, projection0, null, null, null);
+            while(cursor0.moveToNext()){
+                accIDs.add(cursor0.getInt(cursor0.getColumnIndexOrThrow(AccEntry._ID)));
+            }
+        }
+        for(int i=0; i < accIDs.size(); i++){ // cycle through all accounts in the array and add the latest balance at dateTo to the total balance
+            int accID = accIDs.get(i);
+            String[] projection = {
+                    TransEntry._ID,
+                    TransEntry.COLUMN_TRANS_DATE,
+                    TransEntry.COLUMN_TRANS_ACCOUNT,
+                    TransEntry.COLUMN_ACCOUNT_BALANCE};
+            String selection = TransEntry.COLUMN_TRANS_ACCOUNT + "=? AND " + TransEntry.COLUMN_TRANS_DATE + "<=?";
+            String[] selectionArgs = {String.valueOf(accID), String.valueOf(dateTo)};
+            String sortBy = TransEntry.COLUMN_TRANS_DATE + " DESC, " + TransEntry._ID + " DESC LIMIT 1";
+            Cursor cursor = context.getContentResolver().query(TransEntry.CONTENT_URI, projection, selection, selectionArgs, sortBy);
+            if(cursor.moveToNext()){
+                totalBalance += cursor.getFloat(cursor.getColumnIndexOrThrow(TransEntry.COLUMN_ACCOUNT_BALANCE));
+            }
+        }
+        return totalBalance;
     }
 }

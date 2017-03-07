@@ -1,9 +1,11 @@
 package com.example.android.mybudget;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,8 +56,7 @@ public class RecurCursorAdapter extends CursorAdapter {
         String establishment = cursor.getString(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_ESTABLISHMENT));
         long currDate = cursor.getLong(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_CURRENT_DATE));
         float amount = cursor.getFloat(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_AMOUNT));
-
-        Date nextDate = FunctionHelper.calculateNextDate(periodID, currDate); // TODO: remove when NextDate has been added to table
+        long nextDate = cursor.getLong(cursor.getColumnIndexOrThrow(RecurrEntry.COLUMN_NEXT_DATE));
 
         cbSelected.setOnCheckedChangeListener(null);
         cbSelected.setChecked(false);
