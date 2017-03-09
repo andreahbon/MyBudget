@@ -26,6 +26,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,6 +51,7 @@ import java.util.Date;
 
 import static com.example.android.mybudget.FunctionHelper.displayBalance;
 import static com.example.android.mybudget.R.id.amount;
+import static com.example.android.mybudget.R.id.trans_listview;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final int REQUEST_WRITE_STORAGE = 112;
@@ -79,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     TextView tvDateFilter;
     ImageView prevButton, nextButton;
+    ListView transListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         });
 
-        ListView transListView = (ListView) findViewById(R.id.trans_listview);
+        transListView = (ListView) findViewById(R.id.trans_listview);
         budAdapter = new TransCursorAdapter(this, null, catIDs, catNames);
         transListView.setAdapter(budAdapter);
 
@@ -253,7 +256,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     public void saveCSVToDatabase(BufferedReader buffer) throws IOException, ParseException {
-        // TODO: The dates on imported transactions display incorrectly (e.g. 14/01/1970), even though the long numbers seem correct - fix this at some point
         String line;
         String fullText = "";
         Date c = new Date(System.currentTimeMillis());
@@ -298,6 +300,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 if (newUri == null) {
                     Toast.makeText(this, "Error saving transaction", Toast.LENGTH_SHORT).show();
                 }
+                int transID = (int) ContentUris.parseId(newUri); // then, update the account balance for the transaction added
+                FunctionHelper.updateBalance(this, transID, dateTrans, dateTrans, accountID);
             }
         }
     }
@@ -395,7 +399,25 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 getLoaderManager().initLoader(BUDGET_LOADER, null, this);
                 break;
             case BUDGET_LOADER:
+                // calculating the category balance, if any categories are selected
+                DecimalFormat dcFormat = new DecimalFormat("$#,##0.00;-$#,##0.00");
+                TextView catBalanceTV = (TextView) findViewById(R.id.catbalance_textview);
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) transListView.getLayoutParams();
+                if(!filterCatSelection.isEmpty()){
+                    float catBalance = 0;
+                    cursor.moveToPosition(-1);
+                    while(cursor.moveToNext()){
+                        catBalance += cursor.getFloat(cursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT));
+                    }
+                    catBalanceTV.setText("Category balance: " + dcFormat.format(catBalance));
+                    catBalanceTV.setVisibility(View.VISIBLE);
+                    params.addRule(RelativeLayout.ABOVE, R.id.catbalance_textview);
+                } else {   // if no categories are selected, hide the textview and make the listview extend to the balance listview
+                    catBalanceTV.setVisibility(View.GONE);
+                    params.addRule(RelativeLayout.ABOVE, R.id.balance_textview);
+                }
                 budAdapter.swapCursor(cursor);
+                // call the function to display the account balance
                 long dateBalance;
                 if(dateTo==0){
                     dateBalance = 32535090000000L;
@@ -403,10 +425,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     dateBalance = dateTo;
                 }
                 float totalBalance = FunctionHelper.displayBalance(this, accIDs, dateBalance);
-                DecimalFormat dcFormat = new DecimalFormat("$#,##0.00;-$#,##0.00");
                 TextView balanceTV = (TextView) findViewById(R.id.balance_textview);
                 String strBalance;
-                strBalance = "Balance: " + dcFormat.format(totalBalance);
+                strBalance = "Account balance: " + dcFormat.format(totalBalance);
                 if(!stDateTo.isEmpty()){
                     strBalance += " as of " + stDateTo;
                 }

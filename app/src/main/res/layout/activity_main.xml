@@ -45,12 +45,23 @@
         android:paddingBottom="60dp">
     </ListView>
     <TextView
+        android:id="@+id/catbalance_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_above="@id/balance_textview"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:textColor="@color/primaryText"
+        android:background="@color/dividerColor"
+        android:text="Category balance: $111,000.00"/>
+    <TextView
         android:id="@+id/balance_textview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAlignment="center"
         android:layout_alignParentBottom="true"
-        android:paddingTop="8dp"
+        android:paddingTop="4dp"
         android:paddingBottom="8dp"
         android:textColor="@color/primaryText"
         android:text="Balance: $111,000.00 as of 22/02/2017"/>

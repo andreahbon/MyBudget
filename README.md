@@ -9,3 +9,4 @@ Functioning app, with transactions and categories tables
 - Branch created: started working on recurring transactions table, but things were getting too complicated. Will try a different approach (26/02)
 - Recurring transactions are working. Next, will add "Next Date" column to Recurring table (28/2)
 - Recurring transactions are complete and now balances are in place as well (08/03)
+- Category balances have been implemented (09/03)
