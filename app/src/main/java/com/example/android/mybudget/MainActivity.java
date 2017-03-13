@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -131,13 +132,43 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         });
 
+        prevButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String prevPeriod = FunctionHelper.calculatePrevOrNextMonth("prev", dateFrom);
+                goToPrevNextMonth(prevPeriod);
+            }
+        });
+
         nextButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                //TODO: implement next and prev buttons
-                Toast.makeText(MainActivity.this, "Next button clicked!", Toast.LENGTH_SHORT).show();
+                String nextPeriod = FunctionHelper.calculatePrevOrNextMonth("next", dateFrom);
+                goToPrevNextMonth(nextPeriod);
             }
         });
+    }
+
+    public void goToPrevNextMonth(String prevOrNextPeriod){
+        String[] dates = prevOrNextPeriod.split("-");
+        SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+        long startDate = 0;
+        long endDate = 0;
+        try {
+            startDate = df.parse(dates[0]).getTime();
+            endDate = df.parse(dates[1]).getTime();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        SharedPreferences datefilter = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences.Editor editor = datefilter.edit();
+        editor.putString("stDateFrom", dates[0]);
+        editor.putString("stDateTo", dates[1]);
+        editor.putLong("dateFrom", startDate);
+        editor.putLong("dateTo", endDate);
+        editor.commit();
+        readPrefs();
+        refresh_activity();
     }
 
     public void refresh_activity(){
@@ -246,7 +277,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             dateText = "All transactions";
         } else {
             if (stFilterType.equals("Month")){
-                stFilterType = "This month";
                 prevButton.setVisibility(View.VISIBLE);
                 nextButton.setVisibility(View.VISIBLE);
             }

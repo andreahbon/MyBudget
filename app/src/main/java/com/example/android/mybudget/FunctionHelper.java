@@ -93,6 +93,55 @@ public class FunctionHelper {
         return nextDate;
     }
 
+    public static String calculatePrevOrNextMonth(String prevornext, long currDate) {
+        SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+        SimpleDateFormat dfYear = new SimpleDateFormat("yyyy");
+        SimpleDateFormat dfMonth = new SimpleDateFormat("MM");
+
+        String startDateString, endDateString;
+        int nextMonth, nextYear, prevMonth, prevYear, monthAfter, yearAfter;
+        monthAfter = yearAfter = 0;
+        startDateString = endDateString = "";
+        int currYear = Integer.parseInt(dfYear.format(currDate));
+        int currMonth = Integer.parseInt(dfMonth.format(currDate));
+
+        if (prevornext.equals("next")) {
+            nextMonth = currMonth + 1;
+            nextYear = currYear;
+            if (nextMonth == 13) {
+                nextMonth = 1;
+                nextYear += 1;
+            }
+            monthAfter = nextMonth + 1;
+            yearAfter = nextYear;
+            if (monthAfter == 13) {
+                monthAfter = 1;
+                yearAfter += 1;
+            }
+
+            startDateString = "01/" + nextMonth + "/" + nextYear;
+            endDateString = "01/" + monthAfter + "/" + yearAfter;
+        } else {
+            prevMonth = currMonth - 1;
+            prevYear = currYear;
+            if (prevMonth == 0){
+                prevMonth = 12;
+                prevYear -=1;
+            }
+            startDateString = "01/" + prevMonth + "/" + prevYear;
+            endDateString = "01/" + currMonth + "/" + currYear;
+        }
+        long endDate = 0;
+        try {
+            endDate = df.parse(endDateString).getTime() - 86400000;
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        Date date = new Date(endDate);
+        endDateString = df.format(date);
+        return startDateString + "-" + endDateString;
+    }
+
     public static void updateBalance(Context context, int transID, long oldDate, long newDate, int accNumber){
         long thisDate;
         float currBalance = 0;
