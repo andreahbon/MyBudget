@@ -11,3 +11,4 @@ Functioning app, with transactions and categories tables
 - Recurring transactions are complete and now balances are in place as well (08/03)
 - Category balances have been implemented (09/03)
 - Previous and next month views have been implemented (13/03)
+- Transfers have been implemented (13/03)

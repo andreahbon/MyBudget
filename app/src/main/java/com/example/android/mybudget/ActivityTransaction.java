@@ -60,13 +60,13 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     SimpleDateFormat dfDay = new SimpleDateFormat("dd");
 
     CheckBox mReconcET, mIncTaxET, mRecurrET;
-    TextView mDateET, amountSign;
+    TextView mDateET, amountSign, mLabelAcc;
     EditText mDescET, mEstET, mAmountET;
-    Spinner mAccSpinner, mCatSpinner, mPeriodSpinner;
+    Spinner mAccSpinner, mAccToSpinner, mCatSpinner, mPeriodSpinner;
 
     RadioGroup mTypeRadGroup;
     RadioButton expButton, incButton, transButton;
-    LinearLayout mRecurLayout;
+    LinearLayout mRecurLayout, mAccToLayout, mIsRecurring;
 
     CursorAdapter catAdapter, accAdapter;
 
@@ -96,10 +96,13 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         mDateET = (TextView) findViewById(R.id.tv_trans_date);
         mDescET = (EditText) findViewById(R.id.edit_trans_desc);
         mEstET = (EditText) findViewById(R.id.edit_trans_est);
+        mLabelAcc = (TextView) findViewById(R.id.label_acc);
         mAccSpinner = (Spinner) findViewById(R.id.sp_trans_acc);
+        mAccToSpinner = (Spinner)findViewById(R.id.sp_trans_acc_to);
         mAmountET = (EditText) findViewById(R.id.edit_trans_amount);
         mCatSpinner = (Spinner) findViewById(R.id.sp_trans_cat);
         mIncTaxET = (CheckBox) findViewById(R.id.edit_flag_income);
+        mIsRecurring = (LinearLayout) findViewById(R.id.layout_isrecurring);
         mRecurrET = (CheckBox) findViewById(R.id.edit_flag_recurring);
 
         Calendar calendar = Calendar.getInstance();
@@ -118,6 +121,8 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         expButton.setChecked(true); // setting default transaction type as expense
         amountSign = (TextView) findViewById(R.id.amount_sign);
         amountSign.setText("-$"); // setting the sign to "-"
+        mAccToLayout = (LinearLayout) findViewById(R.id.layout_accto);
+        mAccToLayout.setVisibility(View.GONE); // hiding the "Account To" field as the default type of transaction is expense, not transfer
 
         mRecurLayout = (LinearLayout) findViewById(R.id.layout_recurring);
         mPeriodSpinner = (Spinner) findViewById(R.id.sp_rec_period);
@@ -130,9 +135,20 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             public void onCheckedChanged(RadioGroup group, int checkedId) { //changes transactions to negative or positive depending on transaction type selected
                 if(incButton.isChecked()){
                     amountSign.setText("$");
+                    mLabelAcc.setText(getString(R.string.trans_acc));
+                    mAccToLayout.setVisibility(View.GONE);
+                    mIsRecurring.setVisibility(View.VISIBLE);
                 }
                 if(expButton.isChecked()){
                     amountSign.setText("-$");
+                    mLabelAcc.setText(getString(R.string.trans_acc));
+                    mAccToLayout.setVisibility(View.GONE);
+                    mIsRecurring.setVisibility(View.VISIBLE);
+                }
+                if(transButton.isChecked()){ // if Transfer is selected, change the "Account" label to "Account from" and show the "Account to" field
+                    mLabelAcc.setText(getString(R.string.trans_acc_from));
+                    mAccToLayout.setVisibility(View.VISIBLE);
+                    mIsRecurring.setVisibility(View.GONE);
                 }
             }
         });
@@ -305,8 +321,10 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                 break;
             case ACC_LOADER:
                 mAccSpinner.setAdapter(accAdapter);
+                mAccToSpinner.setAdapter(accAdapter);
                 accAdapter.swapCursor(data);
                 mAccSpinner.setSelection(0);
+                mAccToSpinner.setSelection(0);
                 if (mCurrentTransUri != null) {
                     getLoaderManager().initLoader(BUD_LOADER, null, this);
                 }
@@ -371,7 +389,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             strAmount = strAmount.replace(",", "");
         }
         float amountTrans = Float.valueOf(strAmount);
-        if(expButton.isChecked()){
+        if(expButton.isChecked() || transButton.isChecked()){
             amountTrans *= -1;
         }
 
@@ -403,6 +421,23 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         }
         updateRecurring(transID, values);
         FunctionHelper.updateBalance(this, transID, oldDate, newDate, accTrans);
+        if (transButton.isChecked()){
+            values.remove(TransEntry.COLUMN_TRANS_ACCOUNT);
+            values.remove(TransEntry.COLUMN_TRANS_AMOUNT);
+            accTrans = (int) mAccToSpinner.getSelectedItemId();
+            amountTrans *= -1;
+            values.put(TransEntry.COLUMN_TRANS_ACCOUNT, accTrans);
+            values.put(TransEntry.COLUMN_TRANS_AMOUNT, amountTrans);
+            Uri newUri = getContentResolver().insert(TransEntry.CONTENT_URI, values);
+            if (newUri != null) {
+                Toast.makeText(this, getString(R.string.toast_saved), Toast.LENGTH_SHORT).show();
+                transID = (int) ContentUris.parseId(newUri);
+            } else {
+                Toast.makeText(this, getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show();
+            }
+            updateRecurring(transID, values);
+            FunctionHelper.updateBalance(this, transID, oldDate, newDate, accTrans);
+        }
         finish();
     }
 
@@ -428,33 +463,35 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     private void deleteTrans() {
         if (mCurrentTransUri != null) {
             // deleting any recurring transaction first
-            String[] projection = {TransEntry._ID, TransEntry.COLUMN_TRANS_RECURRINGID,
-                    TransEntry.COLUMN_TRANS_DATE};
-            String selection = TransEntry.COLUMN_TRANS_RECURRINGID + "=?";
-            String[] selectionArgs = {String.valueOf(recurrID)};
-            String sortBy = TransEntry.COLUMN_TRANS_DATE + " DESC";
-            // first, check how many transactions there are with this recurring ID
-            Cursor cursor = getContentResolver().query(TransEntry.CONTENT_URI, projection, selection, selectionArgs, sortBy);
-            cursor.moveToFirst();
-            // if there is only one, delete the recurring transaction
-            if(cursor.getCount() == 1){
-                String selectionRec = RecurrEntry._ID + "=?";
-                int deletedRecRows = getContentResolver().delete(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), selectionRec, selectionArgs);
-            } else {
-                // if there are more than one transactions with this rec ID, but this one is the latest one, update the next date in the
-                // recurring table with a new next date = date of second-to-last transaction + period
-                if(cursor.getCount() > 1 && cursor.getInt(cursor.getColumnIndexOrThrow(TransEntry._ID)) == transID){
-                    cursor.moveToNext();
-                    long longCurrDate = cursor.getLong(cursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE));
-                    Date nextDate = FunctionHelper.calculateNextDate(mSelectedPeriod, longCurrDate);
-                    Log.i("longCurrDate", "longCurrDate = "+ longCurrDate);
-                    long longNextDate = nextDate.getTime();
-
-                    ContentValues valuesRec = new ContentValues();
-                    valuesRec.put(RecurrEntry.COLUMN_NEXT_DATE, longNextDate);
+            if(recurrID!=0) {
+                String[] projection = {TransEntry._ID, TransEntry.COLUMN_TRANS_RECURRINGID,
+                        TransEntry.COLUMN_TRANS_DATE};
+                String selection = TransEntry.COLUMN_TRANS_RECURRINGID + "=?";
+                String[] selectionArgs = {String.valueOf(recurrID)};
+                String sortBy = TransEntry.COLUMN_TRANS_DATE + " DESC";
+                // first, check how many transactions there are with this recurring ID
+                Cursor cursor = getContentResolver().query(TransEntry.CONTENT_URI, projection, selection, selectionArgs, sortBy);
+                cursor.moveToFirst();
+                // if there is only one, delete the recurring transaction
+                if (cursor.getCount() == 1) {
                     String selectionRec = RecurrEntry._ID + "=?";
-                    String[] selectionArgsRec = {String.valueOf(recurrID)};
-                    int updatedRec = getContentResolver().update(RecurrEntry.CONTENT_URI, valuesRec, selectionRec, selectionArgsRec);
+                    int deletedRecRows = getContentResolver().delete(ContentUris.withAppendedId(RecurrEntry.CONTENT_URI, recurrID), selectionRec, selectionArgs);
+                } else {
+                    // if there are more than one transactions with this rec ID, but this one is the latest one, update the next date in the
+                    // recurring table with a new next date = date of second-to-last transaction + period
+                    if (cursor.getCount() > 1 && cursor.getInt(cursor.getColumnIndexOrThrow(TransEntry._ID)) == transID) {
+                        cursor.moveToNext();
+                        long longCurrDate = cursor.getLong(cursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE));
+                        Date nextDate = FunctionHelper.calculateNextDate(mSelectedPeriod, longCurrDate);
+                        Log.i("longCurrDate", "longCurrDate = " + longCurrDate);
+                        long longNextDate = nextDate.getTime();
+
+                        ContentValues valuesRec = new ContentValues();
+                        valuesRec.put(RecurrEntry.COLUMN_NEXT_DATE, longNextDate);
+                        String selectionRec = RecurrEntry._ID + "=?";
+                        String[] selectionArgsRec = {String.valueOf(recurrID)};
+                        int updatedRec = getContentResolver().update(RecurrEntry.CONTENT_URI, valuesRec, selectionRec, selectionArgsRec);
+                    }
                 }
             }
 

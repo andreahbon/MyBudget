@@ -33,6 +33,8 @@
     <string name="trans_desc">Description</string>
     <string name="trans_est">Establishment</string>
     <string name="trans_acc">Account</string>
+    <string name="trans_acc_from">Account from</string>
+    <string name="trans_acc_to">Account to</string>
     <string name="trans_amount">Amount</string>
     <string name="trans_cat">Category</string>
     <string name="trans_subcat">Sub-category</string>
