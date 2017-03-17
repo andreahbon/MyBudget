@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">My Budget</string>
+    <string name="acc_balance">"Account balance: "</string>
+    <string name="as_of">" as of "</string>
+    <string name="cat_balance">"Category balance: "</string>
     <string name="import_csv">Import .CSV file</string>
     <string name="export_csv">Export .CSV file</string>
     <string name="manage_categories">Manage Categories</string>

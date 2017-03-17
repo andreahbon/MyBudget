@@ -48,7 +48,9 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.Date;
+import java.util.Locale;
 
 import static com.example.android.mybudget.FunctionHelper.displayBalance;
 import static com.example.android.mybudget.R.id.amount;
@@ -57,6 +59,8 @@ import static com.example.android.mybudget.R.id.trans_listview;
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final int REQUEST_WRITE_STORAGE = 112;
     public static final String PREFS_NAME = "DatePrefs";
+    Currency thisCurrency = Currency.getInstance(Locale.getDefault());
+    String currSymbol = thisCurrency.getSymbol();
 
     public int REQUEST_FILE_GET = 1;
     public int CHANGE_FILTER = 2;
@@ -274,13 +278,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         prevButton.setVisibility(View.INVISIBLE);
         nextButton.setVisibility(View.INVISIBLE);
         if (stFilterType.equals("All transactions")){
-            dateText = "All transactions";
+            dateText = getString(R.string.all_transactions);
         } else {
             if (stFilterType.equals("Month")){
+                dateText = getString(R.string.month);
                 prevButton.setVisibility(View.VISIBLE);
                 nextButton.setVisibility(View.VISIBLE);
+            } else {
+                dateText = getString(R.string.custom_period);
             }
-            dateText = stFilterType + " - " + stDateFrom + " to " + stDateTo;
+            dateText += " - " + stDateFrom + " to " + stDateTo;
         }
         tvDateFilter.setText(dateText);
     }
@@ -430,7 +437,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 break;
             case BUDGET_LOADER:
                 // calculating the category balance, if any categories are selected
-                DecimalFormat dcFormat = new DecimalFormat("$#,##0.00;-$#,##0.00");
+                DecimalFormat dcFormat = new DecimalFormat(currSymbol+"#,##0.00;-" + currSymbol + "#,##0.00");
                 TextView catBalanceTV = (TextView) findViewById(R.id.catbalance_textview);
                 RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) transListView.getLayoutParams();
                 if(!filterCatSelection.isEmpty()){
@@ -439,7 +446,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     while(cursor.moveToNext()){
                         catBalance += cursor.getFloat(cursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT));
                     }
-                    catBalanceTV.setText("Category balance: " + dcFormat.format(catBalance));
+                    catBalanceTV.setText(getString(R.string.cat_balance) + dcFormat.format(catBalance));
                     catBalanceTV.setVisibility(View.VISIBLE);
                     params.addRule(RelativeLayout.ABOVE, R.id.catbalance_textview);
                 } else {   // if no categories are selected, hide the textview and make the listview extend to the balance listview
@@ -457,9 +464,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 float totalBalance = FunctionHelper.displayBalance(this, accIDs, dateBalance);
                 TextView balanceTV = (TextView) findViewById(R.id.balance_textview);
                 String strBalance;
-                strBalance = "Account balance: " + dcFormat.format(totalBalance);
+                strBalance = getString(R.string.acc_balance) + dcFormat.format(totalBalance);
                 if(!stDateTo.isEmpty()){
-                    strBalance += " as of " + stDateTo;
+                    strBalance += getString(R.string.as_of) + stDateTo;
                 }
                 balanceTV.setText(strBalance);
                 break;

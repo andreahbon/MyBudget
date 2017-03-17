@@ -46,7 +46,9 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Currency;
 import java.util.Date;
+import java.util.Locale;
 
 public class ActivityTransaction extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -54,6 +56,9 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     static final int CAT_LOADER = 1;
     static final int ACC_LOADER = 2;
     Uri mCurrentTransUri;
+
+    Currency thisCurrency = Currency.getInstance(Locale.getDefault());
+    String currSymbol = thisCurrency.getSymbol();
 
     SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
     SimpleDateFormat dfYear = new SimpleDateFormat("yyyy");
@@ -124,7 +129,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         transButton = (RadioButton) findViewById(mTypeRadGroup.getChildAt(2).getId());
         expButton.setChecked(true); // setting default transaction type as expense
         amountSign = (TextView) findViewById(R.id.amount_sign);
-        amountSign.setText("-$"); // setting the sign to "-"
+        amountSign.setText("-" + currSymbol); // setting the sign to "-"
         mAccToLayout = (LinearLayout) findViewById(R.id.layout_accto);
         mAccToLayout.setVisibility(View.GONE); // hiding the "Account To" field as the default type of transaction is expense, not transfer
 
@@ -161,10 +166,10 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                     }
                 }
                 if(incButton.isChecked()){
-                    amountSign.setText("$");
+                    amountSign.setText(currSymbol);
                 }
                 if(expButton.isChecked() || transButton.isChecked()){
-                    amountSign.setText("-$");
+                    amountSign.setText("-" + currSymbol);
                 }
                 if(transButton.isChecked()){ // if Transfer is selected, change the "Account" label to "Account from" and show the "Account to" field
                     mLabelAcc.setText(getString(R.string.trans_acc_from));
@@ -370,10 +375,10 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                     float thisAmount = data.getFloat(data.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT));
                     if (thisAmount < 0){
                         thisAmount = Math.abs(thisAmount);
-                        amountSign.setText("-$");
+                        amountSign.setText("-" + currSymbol);
                         expButton.setChecked(true);
                     } else {
-                        amountSign.setText("$");
+                        amountSign.setText(currSymbol);
                         incButton.setChecked(true);
                     }
                     mAmountET.setText(dcFormat.format(thisAmount));
@@ -457,8 +462,8 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             taxFlag = 1;
         }
 
-        if (strAmount.contains("$")) {
-            strAmount = strAmount.replace("$", "");
+        if (strAmount.contains(currSymbol)) {
+            strAmount = strAmount.replace(currSymbol, "");
         }
         if (strAmount.contains(",")) {
             strAmount = strAmount.replace(",", "");

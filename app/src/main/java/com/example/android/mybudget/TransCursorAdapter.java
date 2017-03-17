@@ -26,6 +26,7 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.Date;
 import java.util.Locale;
 
@@ -42,6 +43,9 @@ import static com.example.android.mybudget.R.id.amount;
 public class TransCursorAdapter extends CursorAdapter {
     ArrayList<Integer> catIDs = new ArrayList<>();
     ArrayList<String> catNames = new ArrayList<>();
+    Currency thisCurrency = Currency.getInstance(Locale.getDefault());
+    String currSymbol = thisCurrency.getSymbol();
+
 
     public TransCursorAdapter(Context context, Cursor c, ArrayList<Integer> arrCatIDs, ArrayList<String> arrCatNames){
         super(context, c, 0);
@@ -89,7 +93,7 @@ public class TransCursorAdapter extends CursorAdapter {
         tvCategory.setText(category);
         tvEstablishment.setText(establishment);
         tvDate.setText(df.format(date));
-        DecimalFormat dcFormat = new DecimalFormat("$#,##0.00;-$#,##0.00");
+        DecimalFormat dcFormat = new DecimalFormat(currSymbol + "#,##0.00;-" + currSymbol + "#,##0.00");
         tvAmount.setText(dcFormat.format(amount));
 
         if (amount < 0){

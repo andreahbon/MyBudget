@@ -23,13 +23,18 @@ import com.example.android.mybudget.FunctionHelper;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Currency;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by andre on 7/02/2017.
  */
 
 public class RecurCursorAdapter extends CursorAdapter {
+    Currency thisCurrency = Currency.getInstance(Locale.getDefault());
+    String currSymbol = thisCurrency.getSymbol();
+
 
     public RecurCursorAdapter(Context context, Cursor c){
         super(context, c, 0);
@@ -64,7 +69,7 @@ public class RecurCursorAdapter extends CursorAdapter {
         tvDescription.setText(description);
         tvEstablishment.setText(establishment);
         tvNextDate.setText(df.format(nextDate));
-        DecimalFormat dcFormat = new DecimalFormat("$#,##0.00;-$#,##0.00");
+        DecimalFormat dcFormat = new DecimalFormat(currSymbol + "#,##0.00;-" + currSymbol + "#,##0.00");
         tvAmount.setText(dcFormat.format(amount));
 
         if (amount < 0){

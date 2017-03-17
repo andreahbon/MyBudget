@@ -14,3 +14,4 @@ Functioning app, with transactions and categories tables
 - Transfers have been implemented (13/03)
 - Hid "Pay period" date filter (13/03)
 - Added "Clone transaction" function, and fool-proofed the app by adding "Discard changes" messages and stopping updates that would crash the app (add transaction with no amount or description, delete account or category with existing transactions, adding a custom date filter where the end date is before the start date) (17/03)
+- Translated strings to Portuguese and made the currency symbol flexible (17/03)

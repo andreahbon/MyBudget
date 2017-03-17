@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meu orçamento</string>
+    <string name="acc_with_trans">Esta conta tem transações. Remova as transações primeiro, ou selecione outra conta.</string>
+    <string name="cat_with_trans">Esta categoria tem transações. Remova as transações primeiro, ou selecione outra categoria.</string>
+    <string name="action_clone_trans">Copiar transação</string>
+    <string name="action_delete_trans">Remover transação</string>
+    <string name="action_save_trans">Salvar transação</string>
+    <string name="add_a_trans">Adicionar transação</string>
+    <string name="all_transactions">Todas as transações</string>
+    <string name="cancel">Cancelar</string>
+    <string name="custom_period">Outro período</string>
+    <string name="date_filter">%1$s - %2$s a %3$s</string>
+    <string name="delete">Remover</string>
+    <string name="delete_acc_dialog_msg">Remover esta conta?</string>
+    <string name="delete_cat_dialog_msg">Remover esta categoria?</string>
+    <string name="delete_trans_dialog_msg">Remover esta transação?</string>
+    <string name="discard">Descartar</string>
+    <string name="discard_dialog_msg">Descartar mudanças?</string>
+    <string name="edit_trans">Editar transação</string>
+    <string name="end_date">Data final:</string>
+    <string name="expense">Despesa</string>
+    <string name="expiry_date">Data de validade</string>
+    <string-array name="period_array">
+        <item>Semana</item>
+        <item>Quinzena</item>
+        <item>Mês</item>
+        <item>Trimestre</item>
+        <item>Ano</item>
+    </string-array>
+    <string name="export_csv">Exportar para .CSV</string>
+    <string name="flag_income">Para IR?</string>
+    <string name="flag_recurring">Recorrente?</string>
+    <string name="import_csv">Importar arquivo .CSV</string>
+    <string name="income">Receita</string>
+    <string name="is_reconciled">Reconciliada?</string>
+    <string name="keep_editing">Continuar editando</string>
+    <string name="manage_accounts">Administrar contas</string>
+    <string name="manage_categories">Administrar categorias</string>
+    <string name="month">Mês</string>
+    <string name="no_desc_or_amount">Sua transação precisa ter descrição e valor</string>
+    <string name="pay_period">Período salarial</string>
+    <string name="prompt_acc_name">Nome da conta</string>
+    <string name="prompt_cat_name">Nome da categoria</string>
+    <string name="prompt_datefilter">Escolha um filtro de data</string>
+    <string name="recurring_trans">Transações recorrentes</string>
+    <string name="repeat_every">Repetir a cada</string>
+    <string name="start_date">Data inicial</string>
+    <string name="swap_dates">\"Data final\" anterior à \"data inicial\". As datas foram invertidas.</string>
+    <string name="toast_acc_delete_failed">Erro ao remover conta</string>
+    <string name="toast_acc_deleted">Conta removida</string>
+    <string name="toast_acc_save_failed">Erro ao salvar conta</string>
+    <string name="toast_acc_saved">Conta salva</string>
+    <string name="toast_acc_updated">Conta atualizada</string>
+    <string name="toast_cat_delete_failed">Erro ao remover categoria</string>
+    <string name="toast_cat_deleted">Categoria removida</string>
+    <string name="toast_cat_save_failed">Erro ao salvar categoria</string>
+    <string name="toast_cat_saved">Categoria salva</string>
+    <string name="toast_cat_update_failed">Erro ao atualizar categoria</string>
+    <string name="toast_cat_updated">Categoria atualizada</string>
+    <string name="toast_failed_acc_update">Erro ao atualizar conta</string>
+    <string name="toast_rec_add_failed">Erro ao adicionar transação recorrente</string>
+    <string name="toast_rec_added">Transação recorrente adicionada</string>
+    <string name="toast_rec_update_failed">Erro ao atualizar transação recorrente</string>
+    <string name="toast_rec_updated">Transação recorrente atualizada</string>
+    <string name="toast_save_failed">Erro ao salvar transação</string>
+    <string name="toast_saved">Transação salva</string>
+    <string name="toast_trans_delete_failed">Erro ao remover transação</string>
+    <string name="toast_trans_deleted">Transação removida</string>
+    <string name="toast_update_failed">Erro ao atualizar transação</string>
+    <string name="toast_updated">Transação atualizada</string>
+    <string name="trans_acc">Conta</string>
+    <string name="trans_acc_from">Conta origem</string>
+    <string name="trans_acc_to">Conta destino</string>
+    <string name="trans_amount">Valor</string>
+    <string name="trans_cat">Category</string>
+    <string name="trans_date">Data da transação</string>
+    <string name="trans_desc">Descrição</string>
+    <string name="trans_est">Estabelecimento</string>
+    <string name="trans_subcat">Sub-categoria</string>
+    <string name="transfer">Transferência</string>
+    <string name="use_as_pay">Usar como período salarial</string>
+    <string name="acc_balance">"Balanço das contas: "</string>
+    <string name="as_of">" no dia "</string>
+    <string name="cat_balance">"Balanço das categorias: "</string>
+</resources>
