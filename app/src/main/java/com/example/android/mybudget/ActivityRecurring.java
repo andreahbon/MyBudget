@@ -4,10 +4,13 @@ import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.v4.app.NavUtils;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -39,6 +42,7 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
     ArrayList<String> selRecNextDate = new ArrayList<String>();
     SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
     long todayMilli;
+    boolean anythingSelected = false;
 
 
     @Override
@@ -67,8 +71,12 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
                             selectedRecTrans.remove(i);
                             selRecNextDate.remove(i);
                         }
+                        if(selectedRecTrans.size() < 1){
+                            anythingSelected = false;
+                        }
                     }
                 } else {
+                    anythingSelected = true;
                     cbSelected.setChecked(true);
                     selectedRecTrans.add(id);
                     selRecNextDate.add(tvNextDate.getText().toString());
@@ -115,9 +123,55 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
                 addRecTransactions();
                 finish();
                 return true;
+            case android.R.id.home:
+                if (!anythingSelected) {
+                    NavUtils.navigateUpFromSameTask(this);
+                    return true;
+                }
+                DialogInterface.OnClickListener discardButtonClickListener = new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int i) {
+                        NavUtils.navigateUpFromSameTask(ActivityRecurring.this);
+                    }
+                };
+                showUnsavedChangesDialog(discardButtonClickListener);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
+
+    private void showUnsavedChangesDialog(DialogInterface.OnClickListener discardButtonClickListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(getString(R.string.discard_dialog_msg));
+        builder.setPositiveButton(getString(R.string.discard), discardButtonClickListener);
+        builder.setNegativeButton(getString(R.string.keep_editing), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if (dialogInterface != null) {
+                    dialogInterface.dismiss();
+                }
+            }
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!anythingSelected) {
+            super.onBackPressed();
+            return;
+        }
+        DialogInterface.OnClickListener discardButtonClickListener =
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        finish();
+                    }
+                };
+        showUnsavedChangesDialog(discardButtonClickListener);
+    }
+
 
     public void addRecTransactions(){
         for(int i = 0; i < selectedRecTrans.size(); i++){

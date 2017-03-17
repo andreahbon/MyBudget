@@ -15,4 +15,9 @@
         android:id="@+id/action_delete"
         android:title="@string/action_delete_trans"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_clone"
+        android:title="@string/action_clone_trans"
+        app:showAsAction="never" />
 </menu>

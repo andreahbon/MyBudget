@@ -20,6 +20,7 @@
 
         <RadioButton
             android:id="@+id/date_filter_option_payperiod"
+            android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"

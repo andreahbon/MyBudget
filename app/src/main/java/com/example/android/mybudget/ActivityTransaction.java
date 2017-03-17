@@ -11,12 +11,14 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -47,7 +49,6 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class ActivityTransaction extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
-    //TODO: Add "Discard changes" dialog when back button is pressed
 
     static final int BUD_LOADER = 0;
     static final int CAT_LOADER = 1;
@@ -75,6 +76,9 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     long oldDate, newDate;
     float accBalance;
 
+    Menu transMenu;
+    boolean mTransHasChanged = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,9 +88,9 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         mCurrentTransUri = i.getData();
 
         if (mCurrentTransUri != null) {
-            setTitle("Edit transaction");
+            setTitle(getString(R.string.edit_trans));
         } else {
-            setTitle("Add a transaction");
+            setTitle(getString(R.string.add_a_trans));
         }
 
         oldDate =  32535090000000L;
@@ -130,25 +134,43 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         periodAdapter.addAll(getResources().getTextArray(R.array.period_array));
         mPeriodSpinner.setAdapter(periodAdapter);
 
+        incButton.setOnTouchListener(mTouchListener);
+        expButton.setOnTouchListener(mTouchListener);
+        transButton.setOnTouchListener(mTouchListener);
+        mReconcET.setOnTouchListener(mTouchListener);
+        mDateET.setOnTouchListener(mTouchListener);
+        mDescET.setOnTouchListener(mTouchListener);
+        mEstET.setOnTouchListener(mTouchListener);
+        mAccSpinner.setOnTouchListener(mTouchListener);
+        mAccToSpinner.setOnTouchListener(mTouchListener);
+        mAmountET.setOnTouchListener(mTouchListener);
+        mCatSpinner.setOnTouchListener(mTouchListener);
+        mIncTaxET.setOnTouchListener(mTouchListener);
+        mRecurrET.setOnTouchListener(mTouchListener);
+        mPeriodSpinner.setOnTouchListener(mTouchListener);
+
         mTypeRadGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) { //changes transactions to negative or positive depending on transaction type selected
+                if(incButton.isChecked() || expButton.isChecked()){
+                    mLabelAcc.setText(getString(R.string.trans_acc));
+                    mAccToLayout.setVisibility(View.GONE);
+                    mIsRecurring.setVisibility(View.VISIBLE);
+                    if(mRecurrET.isChecked()){
+                        mRecurLayout.setVisibility(View.VISIBLE);
+                    }
+                }
                 if(incButton.isChecked()){
                     amountSign.setText("$");
-                    mLabelAcc.setText(getString(R.string.trans_acc));
-                    mAccToLayout.setVisibility(View.GONE);
-                    mIsRecurring.setVisibility(View.VISIBLE);
                 }
-                if(expButton.isChecked()){
+                if(expButton.isChecked() || transButton.isChecked()){
                     amountSign.setText("-$");
-                    mLabelAcc.setText(getString(R.string.trans_acc));
-                    mAccToLayout.setVisibility(View.GONE);
-                    mIsRecurring.setVisibility(View.VISIBLE);
                 }
                 if(transButton.isChecked()){ // if Transfer is selected, change the "Account" label to "Account from" and show the "Account to" field
                     mLabelAcc.setText(getString(R.string.trans_acc_from));
                     mAccToLayout.setVisibility(View.VISIBLE);
                     mIsRecurring.setVisibility(View.GONE);
+                    mRecurLayout.setVisibility(View.GONE);
                 }
             }
         });
@@ -202,7 +224,8 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_transactions, menu);
+        transMenu = menu;
+        getMenuInflater().inflate(R.menu.menu_transactions, transMenu);
         return true;
     }
 
@@ -211,6 +234,8 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         super.onPrepareOptionsMenu(menu);
         if (mCurrentTransUri == null) {
             MenuItem menuItem = menu.findItem(R.id.action_delete);
+            menuItem.setVisible(false);
+            menuItem = menu.findItem(R.id.action_clone);
             menuItem.setVisible(false);
         }
         return true;
@@ -229,26 +254,70 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
             case R.id.action_delete:
                 showDeleteConfirmationDialog();
                 return true;
-/*            case android.R.id.home:
-                if (!mProdHasChanged) {
+
+            case R.id.action_clone:
+                mCurrentTransUri = null;
+                this.setTitle(getString(R.string.add_a_trans));
+                this.invalidateOptionsMenu();
+
+            case android.R.id.home:
+                if (!mTransHasChanged) {
                     NavUtils.navigateUpFromSameTask(this);
                     return true;
                 }
                 DialogInterface.OnClickListener discardButtonClickListener = new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int i) {
-                        NavUtils.navigateUpFromSameTask(DetailsActivity.this);
+                        NavUtils.navigateUpFromSameTask(ActivityTransaction.this);
                     }
                 };
                 showUnsavedChangesDialog(discardButtonClickListener);
                 return true;
-*/
         }
         return super.onOptionsItemSelected(item);
     }
 
+    private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            mTransHasChanged = true;
+            return false;
+        }
+    };
+
+    private void showUnsavedChangesDialog(DialogInterface.OnClickListener discardButtonClickListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(getString(R.string.discard_dialog_msg));
+        builder.setPositiveButton(getString(R.string.discard), discardButtonClickListener);
+        builder.setNegativeButton(getString(R.string.keep_editing), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if (dialogInterface != null) {
+                    dialogInterface.dismiss();
+                }
+            }
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
 
     @Override
+    public void onBackPressed() {
+        if (!mTransHasChanged) {
+            super.onBackPressed();
+            return;
+        }
+        DialogInterface.OnClickListener discardButtonClickListener =
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        finish();
+                    }
+                };
+        showUnsavedChangesDialog(discardButtonClickListener);
+    }
+
+
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         switch (loader.getId()) {
             case BUD_LOADER:
@@ -359,6 +428,12 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
     }
 
     private void saveTrans() throws ParseException {
+        String descTrans = mDescET.getText().toString().trim();
+        String strAmount = mAmountET.getText().toString().trim();
+        if(descTrans.isEmpty() || strAmount.isEmpty()){
+            Toast.makeText(this, getString(R.string.no_desc_or_amount), Toast.LENGTH_SHORT).show();
+            return;
+        }
         int reconFlag = 0;
         if (mReconcET.isChecked()) {
             reconFlag = 1;
@@ -372,7 +447,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         Date c = new Date(System.currentTimeMillis());
         long todayMilli = c.getTime();
 
-        String descTrans = mDescET.getText().toString().trim();
+
         String estTrans = mEstET.getText().toString().trim();
         accTrans = (int) mAccSpinner.getSelectedItemId();
         int catTrans = (int) mCatSpinner.getSelectedItemId();
@@ -381,7 +456,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
         if (mIncTaxET.isChecked()) {
             taxFlag = 1;
         }
-        String strAmount = mAmountET.getText().toString().trim();
+
         if (strAmount.contains("$")) {
             strAmount = strAmount.replace("$", "");
         }

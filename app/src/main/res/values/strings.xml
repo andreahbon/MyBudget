@@ -42,6 +42,9 @@
     <string name="flag_recurring">Recurring?</string>
     <string name="action_save_trans">Save transaction</string>
     <string name="action_delete_trans">Delete transaction</string>
+    <string name="action_clone_trans">Clone transaction</string>
+    <string name="add_a_trans">Add a transaction</string>
+    <string name="edit_trans">Edit transaction</string>
     <string name="toast_updated">Transaction updated</string>
     <string name="toast_update_failed">Error updating transaction</string>
     <string name="toast_rec_updated">Recurring transaction updated</string>
@@ -64,9 +67,16 @@
     <string name="toast_acc_delete_failed">Error deleting account</string>
     <string name="toast_trans_deleted">Transaction deleted</string>
     <string name="toast_trans_delete_failed">Error deleting transaction</string>
-    <string name="delete_cat_dialog_msg">Delete this category? (This may affect your transactions)</string>
-    <string name="delete_acc_dialog_msg">Delete this account? (This may affect your transactions)</string>
+    <string name="delete_cat_dialog_msg">Delete this category?</string>
+    <string name="delete_acc_dialog_msg">Delete this account?</string>
     <string name="delete_trans_dialog_msg">Delete this transaction?</string>
+    <string name="discard_dialog_msg">Discard your changes and quit editing?</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep Editing</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
+    <string name="swap_dates">"End date" before "start date". Dates have been swapped around.</string>
+    <string name="no_desc_or_amount">Your transaction must have a description and an amount.</string>
+    <string name="acc_with_trans">Can\'t delete an account with existing transactions. Delete the transactions first, or change their account.</string>
+    <string name="cat_with_trans">Can\'t delete a category with existing transactions. Delete the transactions first, or change their category.</string>
 </resources>

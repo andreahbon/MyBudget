@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
+import com.example.android.mybudget.data.BudgetContract.TransEntry;
 
 /**
  * Created by andre on 10/02/2017.
@@ -41,6 +42,14 @@ public class CatCursorAdapter extends CursorAdapter {
         deleteButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
+                String[] deleteProj = {TransEntry._ID, TransEntry.COLUMN_TRANS_CAT}; // check if there are any transactions with this category number
+                String selection = TransEntry.COLUMN_TRANS_CAT + "=?";
+                String[] selArgs = {String.valueOf(catID)};
+                Cursor deleteCursor = context.getContentResolver().query(TransEntry.CONTENT_URI, deleteProj, selection, selArgs, null);
+                if(deleteCursor.getCount() > 0){ // if there are transactions with this category number, display message and exit function
+                    Toast.makeText(context, context.getString(R.string.cat_with_trans), Toast.LENGTH_LONG).show();
+                    return;
+                }
                 showDeleteConfirmationDialog(context, catID);
             }
         });

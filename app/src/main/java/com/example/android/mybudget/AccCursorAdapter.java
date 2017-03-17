@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import com.example.android.mybudget.data.BudgetContract;
 import com.example.android.mybudget.data.BudgetContract.AccEntry;
+import com.example.android.mybudget.data.BudgetContract.TransEntry;
 
 /**
  * Created by andre on 17/02/2017.
@@ -41,6 +42,14 @@ public class AccCursorAdapter extends CursorAdapter {
         deleteButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
+                String[] deleteProj = {TransEntry._ID, TransEntry.COLUMN_TRANS_ACCOUNT}; // check if there are any transactions with this account number
+                String selection = TransEntry.COLUMN_TRANS_ACCOUNT + "=?";
+                String[] selArgs = {String.valueOf(accID)};
+                Cursor deleteCursor = context.getContentResolver().query(TransEntry.CONTENT_URI, deleteProj, selection, selArgs, null);
+                if(deleteCursor.getCount() > 0){ // if there are transactions with this account number, display message and exit function
+                    Toast.makeText(context, context.getString(R.string.acc_with_trans), Toast.LENGTH_LONG).show();
+                    return;
+                }
                 showDeleteConfirmationDialog(context, accID);
             }
         });

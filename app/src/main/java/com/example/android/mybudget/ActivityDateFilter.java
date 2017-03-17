@@ -25,7 +25,7 @@ import static com.example.android.mybudget.R.id.date;
 
 
 public class ActivityDateFilter extends AppCompatActivity {
-    //TODO: implement "Pay Period" option when recurring transactions have been set up
+    //TODO: implement "Pay Period" option in a future release
 
     public static final String PREFS_NAME = "DatePrefs";
 
@@ -123,6 +123,15 @@ public class ActivityDateFilter extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.action_save_filter:
                 saveFilter();
+                if (dateFrom > dateTo){ // then, swap the dates around
+                    Toast.makeText(this, getString(R.string.swap_dates), Toast.LENGTH_SHORT).show();
+                    long spareDate = dateFrom;
+                    dateFrom = dateTo;
+                    dateTo = spareDate;
+                    String spareString = stDateFrom;
+                    stDateFrom = stDateTo;
+                    stDateTo = spareString;
+                }
                 SharedPreferences datefilter = getSharedPreferences(PREFS_NAME, 0);
                 SharedPreferences.Editor editor = datefilter.edit();
                 editor.putString("stDateFrom", stDateFrom);
@@ -139,7 +148,6 @@ public class ActivityDateFilter extends AppCompatActivity {
     }
 
     private void saveFilter(){
-        // TODO: add check for dateTo < dateFrom
         int filterSelectedButton = filterRadGroup.getCheckedRadioButtonId();
         RadioButton selectedButton = (RadioButton) findViewById(filterSelectedButton);
         switch (selectedButton.getText().toString()) {
@@ -170,6 +178,7 @@ public class ActivityDateFilter extends AppCompatActivity {
                 stDateFrom = mTVStartDate.getText().toString();
                 stDateTo = mTVEndDate.getText().toString();
                 stFilterType = "Custom period";
+                
                 try {
                     dateFrom = df.parse(stDateFrom).getTime();
                     dateTo = df.parse(stDateTo).getTime();
