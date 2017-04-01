@@ -82,4 +82,7 @@
     <string name="no_desc_or_amount">Your transaction must have a description and an amount.</string>
     <string name="acc_with_trans">Can\'t delete an account with existing transactions. Delete the transactions first, or change their account.</string>
     <string name="cat_with_trans">Can\'t delete a category with existing transactions. Delete the transactions first, or change their category.</string>
+    <string name="notification_title">MyBudget backup</string>
+    <string name="notification_text">Happy new month! Would you like to send yourself an email with a backup of your budget data?</string>
+    <string name="backup">Backup</string>
 </resources>

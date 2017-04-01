@@ -13,6 +13,7 @@ import android.support.v4.app.NavUtils;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -51,7 +52,7 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
         setContentView(R.layout.activity_recurring);
 
         ListView recListView = (ListView) findViewById(R.id.recur_listview);
-        recAdapter = new RecurCursorAdapter(this, null);
+        recAdapter = new RecurCursorAdapter(this, null, selectedRecTrans);
         recListView.setAdapter(recAdapter);
 
         getLoaderManager().initLoader(RECURRING_LOADER, null, this);
@@ -81,6 +82,7 @@ public class ActivityRecurring extends AppCompatActivity implements LoaderManage
                     selectedRecTrans.add(id);
                     selRecNextDate.add(tvNextDate.getText().toString());
                 }
+                Log.i("Recurring trans", selectedRecTrans.toString());
             }
         });
     }

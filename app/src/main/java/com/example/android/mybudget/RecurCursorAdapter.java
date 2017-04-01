@@ -23,6 +23,7 @@ import com.example.android.mybudget.FunctionHelper;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Date;
 import java.util.Locale;
@@ -34,10 +35,12 @@ import java.util.Locale;
 public class RecurCursorAdapter extends CursorAdapter {
     Currency thisCurrency = Currency.getInstance(Locale.getDefault());
     String currSymbol = thisCurrency.getSymbol();
+    ArrayList<Long> mSelectedTrans = new ArrayList<>();
 
 
-    public RecurCursorAdapter(Context context, Cursor c){
+    public RecurCursorAdapter(Context context, Cursor c, ArrayList<Long> selectedTransIDs) {
         super(context, c, 0);
+        mSelectedTrans = selectedTransIDs;
     }
 
     @Override
@@ -65,6 +68,12 @@ public class RecurCursorAdapter extends CursorAdapter {
 
         cbSelected.setOnCheckedChangeListener(null);
         cbSelected.setChecked(false);
+        for (long selID : mSelectedTrans) {
+            if(selID == recID){
+                cbSelected.setChecked(true);
+                break;
+            }
+        }
 
         tvDescription.setText(description);
         tvEstablishment.setText(establishment);

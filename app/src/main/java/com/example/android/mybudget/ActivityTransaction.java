@@ -264,6 +264,7 @@ public class ActivityTransaction extends AppCompatActivity implements LoaderMana
                 mCurrentTransUri = null;
                 this.setTitle(getString(R.string.add_a_trans));
                 this.invalidateOptionsMenu();
+                return true;
 
             case android.R.id.home:
                 if (!mTransHasChanged) {

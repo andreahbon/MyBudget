@@ -11,14 +11,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,17 +27,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.mybudget.FunctionHelper;
 import com.example.android.mybudget.data.BudgetContract.TransEntry;
 import com.example.android.mybudget.data.BudgetContract.CatEntry;
-import com.example.android.mybudget.data.BudgetContract.AccEntry;
 import com.example.android.mybudget.data.BudgetContract.FilterAccEntry;
 import com.example.android.mybudget.data.BudgetContract.FilterCatEntry;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -52,9 +45,6 @@ import java.util.Currency;
 import java.util.Date;
 import java.util.Locale;
 
-import static com.example.android.mybudget.FunctionHelper.displayBalance;
-import static com.example.android.mybudget.R.id.amount;
-import static com.example.android.mybudget.R.id.trans_listview;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final int REQUEST_WRITE_STORAGE = 112;
@@ -115,6 +105,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         transListView = (ListView) findViewById(R.id.trans_listview);
         budAdapter = new TransCursorAdapter(this, null, catIDs, catNames);
         transListView.setAdapter(budAdapter);
+
+        // set alarm for monthly notification to back up data
+        FunctionHelper.triggerAlarm(this);
 
         getLoaderManager().initLoader(FILTER_ACC_LOADER, null, this);
 
@@ -206,7 +199,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 importCSVfile();
                 return true;
             case R.id.action_exportcsv:
-                exportToCSV();
+                FunctionHelper.exportToCSV(this);
                 return true;
             case R.id.action_mngcat:
                 Intent intent = new Intent(this, ActivityCategory.class);
@@ -486,141 +479,5 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             default:
                 break;
         }
-    }
-
-
-    public void exportToCSV() {
-        String[] projection10 = {
-                TransEntry._ID,
-                TransEntry.COLUMN_TRANS_RECONCILEDFLAG,
-                TransEntry.COLUMN_TRANS_DATE,
-                TransEntry.COLUMN_TRANS_DESC,
-                TransEntry.COLUMN_TRANS_EST,
-                TransEntry.COLUMN_TRANS_ACCOUNT,
-                TransEntry.COLUMN_TRANS_AMOUNT,
-                TransEntry.COLUMN_TRANS_CAT,
-                TransEntry.COLUMN_TRANS_SUBCAT,
-                TransEntry.COLUMN_TRANS_TAXFLAG,
-                TransEntry.COLUMN_TRANS_DATEUPD,
-                TransEntry.COLUMN_TRANS_RECURRINGID,
-                TransEntry.COLUMN_ACCOUNT_BALANCE};
-        String sortBy10 = TransEntry.COLUMN_TRANS_DATE + " ASC";
-        Cursor transCursor = getContentResolver().query(TransEntry.CONTENT_URI, projection10, null, null, sortBy10);
-
-        String columnString1 = TransEntry._ID + "," +
-                TransEntry.COLUMN_TRANS_RECONCILEDFLAG + "," +
-                TransEntry.COLUMN_TRANS_DATE + "," +
-                TransEntry.COLUMN_TRANS_DESC + "," +
-                TransEntry.COLUMN_TRANS_EST + "," +
-                TransEntry.COLUMN_TRANS_ACCOUNT + "," +
-                TransEntry.COLUMN_TRANS_AMOUNT + "," +
-                TransEntry.COLUMN_TRANS_CAT + "," +
-                TransEntry.COLUMN_TRANS_SUBCAT + "," +
-                TransEntry.COLUMN_TRANS_TAXFLAG + "," +
-                TransEntry.COLUMN_TRANS_DATEUPD + "," +
-                TransEntry.COLUMN_TRANS_RECURRINGID + "," +
-                TransEntry.COLUMN_ACCOUNT_BALANCE;
-
-        String dataString1 = "";
-        while(transCursor.moveToNext()){
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry._ID)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECONCILEDFLAG)) + ",";
-            dataString1 += transCursor.getLong(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATE)) + ",";
-            dataString1 += transCursor.getString(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DESC)) + ",";
-            dataString1 += transCursor.getString(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_EST)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_ACCOUNT)) + ",";
-            dataString1 += transCursor.getFloat(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_AMOUNT)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_CAT)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_SUBCAT)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_TAXFLAG)) + ",";
-            dataString1 += transCursor.getLong(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_DATEUPD)) + ",";
-            dataString1 += transCursor.getInt(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_TRANS_RECURRINGID)) + ",";
-            dataString1 += transCursor.getFloat(transCursor.getColumnIndexOrThrow(TransEntry.COLUMN_ACCOUNT_BALANCE)) + "\n";
-    }
-        transCursor.close();
-        String combinedString1 = columnString1 + "\n" + dataString1;
-
-        String[] projection11 = {
-                CatEntry._ID,
-                CatEntry.COLUMN_CATNAME};
-        String sortBy11 = CatEntry._ID + " ASC";
-        Cursor catCursor = getContentResolver().query(CatEntry.CONTENT_URI, projection11, null, null, sortBy11);
-
-        String columnString2 = CatEntry._ID + "," +
-                CatEntry.COLUMN_CATNAME;
-
-        String dataString2 = "";
-        while(catCursor.moveToNext()){
-            dataString2 += catCursor.getInt(catCursor.getColumnIndexOrThrow(CatEntry._ID)) + ",";
-            dataString2 += catCursor.getString(catCursor.getColumnIndexOrThrow(CatEntry.COLUMN_CATNAME)) + "\n";
-        }
-        catCursor.close();
-        String combinedString2 = columnString2 + "\n" + dataString2;
-
-        String[] projection12 = {
-                AccEntry._ID,
-                AccEntry.COLUMN_ACCNAME};
-        String sortBy12 = AccEntry._ID + " ASC";
-        Cursor accCursor = getContentResolver().query(AccEntry.CONTENT_URI, projection12, null, null, sortBy12);
-
-        String columnString3 = AccEntry._ID + "," + AccEntry.COLUMN_ACCNAME;
-
-        String dataString3 = "";
-        while(accCursor.moveToNext()){
-            dataString3 += accCursor.getInt(accCursor.getColumnIndexOrThrow(AccEntry._ID)) + ",";
-            dataString3 += accCursor.getString(accCursor.getColumnIndexOrThrow(AccEntry.COLUMN_ACCNAME)) + "\n";
-        }
-        accCursor.close();
-        String combinedString3 = columnString3 + "\n" + dataString3;
-
-        File file1 = null;
-        File file2 = null;
-        File file3 = null;
-        File root = Environment.getExternalStorageDirectory();
-        if (root.canWrite()){
-            File dir = new File (root.getAbsolutePath() + "/BudgetData");
-            dir.mkdirs();
-            file1 = new File(dir, "Transactions.csv");
-            file2 = new File(dir, "Categories.csv");
-            file3 = new File(dir, "Accounts.csv");
-            FileOutputStream out1 = null;
-            FileOutputStream out2 = null;
-            FileOutputStream out3 = null;
-            try {
-                out1 = new FileOutputStream(file1);
-                out2 = new FileOutputStream(file2);
-                out3 = new FileOutputStream(file3);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-            try {
-                out1.write(combinedString1.getBytes());
-                out2.write(combinedString2.getBytes());
-                out3.write(combinedString3.getBytes());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                out1.close();
-                out2.close();
-                out3.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-    Uri u1 = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", file1);
-    Uri u2 = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", file2);
-    Uri u3 = FileProvider.getUriForFile(MainActivity.this, BuildConfig.APPLICATION_ID + ".provider", file3);
-    ArrayList<Uri> uris = new ArrayList<>();
-    uris.add(u1);
-    uris.add(u2);
-    uris.add(u3);
-
-    Intent sendIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-    sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Budget data");
-    sendIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-    sendIntent.setType("text/html");
-    startActivity(sendIntent);
     }
 }

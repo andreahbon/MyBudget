@@ -83,4 +83,7 @@
     <string name="acc_balance">"Balanço das contas: "</string>
     <string name="as_of">" no dia "</string>
     <string name="cat_balance">"Balanço das categorias: "</string>
+    <string name="backup">Fazer backup</string>
+    <string name="notification_title">Backup de dados do MyBudget</string>
+    <string name="notification_text">Feliz mês novo! Que tal mandar um email com um backup dos seus dados no MyBudget?</string>
 </resources>
